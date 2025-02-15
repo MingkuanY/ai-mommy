@@ -46,11 +46,11 @@ def process_segment(segment, fs):
 
 def main():
     # File path for the EMG data file
-    filename = "1_raw_data_13-12_22.03.16.txt"
+    filename = "history.txt"
     
     # Read the file assuming whitespace as the delimiter, skipping the header line.
     df = pd.read_csv(filename, delim_whitespace=True, skiprows=1, header=None)
-    df.columns = ['time', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'class']
+    df.columns = ['time', 'ch1']
     
     # Convert time from milliseconds to seconds
     df['time'] = df['time'] / 1000.0

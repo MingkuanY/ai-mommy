@@ -137,7 +137,7 @@ class StressMonitorAgent:
         Recent Actions Taken:
         {recent_actions}
         
-        Determine what interventions are needed. Consider:
+        Determine what interventions might be needed. Consider:
         1. The time of day and appropriate activities
         2. The stress level and potential need for breaks
         3. The current activity and its appropriateness
@@ -161,7 +161,7 @@ class StressMonitorAgent:
             "analysis": "User has been working intensely and needs a break"
         }}
         
-        Respond with the appropriate action(s):
+        Respond with the appropriate action(s) or no action if none are needed.:
         """
         
     def get_screenshot(self):
@@ -211,6 +211,7 @@ class StressMonitorAgent:
     
     def execute_control(self, command: str):
         """Execute computer control command"""
+        
         # Add implementation using browser-use library
         print(f"Control command: {command}")
     
@@ -272,11 +273,11 @@ class StressMonitorAgent:
                     os.remove(screenshot_path)
                 
                 # Wait for next check
-                time.sleep(3)
+                time.sleep(5)
                 
             except Exception as e:
                 print(f"Error in monitoring loop: {e}")
-                time.sleep(3)
+                time.sleep(5)
 
 def main():
     # Initialize the agent

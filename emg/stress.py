@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, welch
 
 def butter_bandpass(data, lowcut, highcut, fs, order=4):
-    """Apply a bandpass Butterworth filter."""
+    """Apply a Butterworth bandpass filter."""
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
@@ -43,6 +43,7 @@ def process_segment(segment, fs):
     filtered_signal = butter_bandpass(raw_signal, 0.5, 20, fs, order=4)
     mdf = compute_median_frequency(filtered_signal, fs)
     return mdf
+
 def main():
     # File path for the EMG data file
     filename = "1_raw_data_13-12_22.03.16.txt"
@@ -56,41 +57,71 @@ def main():
 
     # Use only the first fifth of the data
     df = df.iloc[:len(df) // 5].reset_index(drop=True)
-
-    # STEP 1: Rectify the EMG signal from channel 1
+    
+    # Calculate the sampling frequency from the time vector
+    fs = 1 / (df['time'].iloc[1] - df['time'].iloc[0])
+    
+    ###############################
+    # Original Stress Computation #
+    ###############################
+    # Step 1: Rectify the raw EMG signal (Channel 1)
     df['ch1_rect'] = df['ch1'].abs()
 
-    # STEP 2: Smooth via a rolling mean
-    # Adjust the window size to control smoothing. Larger = more smoothing.
-    window_size = 800  
+    # Step 2: Smooth the rectified signal with a rolling average
+    window_size = 800  # Adjust the window size as needed
     df['ch1_smooth'] = df['ch1_rect'].rolling(window=window_size, center=True).mean()
-
-    # Because of the rolling window, the first/last few points will be NaN.
-    # You can fill or drop them:
     df['ch1_smooth'].fillna(method='bfill', inplace=True)
     df['ch1_smooth'].fillna(method='ffill', inplace=True)
 
-    # STEP 3: Rescale from 0 to 10 (optional)
-    # This ensures the stress level is in a 0–10 range
+    # Step 3: Rescale the smoothed signal to a stress level between 0 and 10
     min_val = df['ch1_smooth'].min()
     max_val = df['ch1_smooth'].max()
-    df['stress'] = 10 * (df['ch1_smooth'] - min_val) / (max_val - min_val + 1e-9)  # +1e-9 to avoid /0
+    df['stress'] = 10 * (df['ch1_smooth'] - min_val) / (max_val - min_val + 1e-9)
 
-    # Plot the raw EMG (Channel 1) vs. the smoothed stress level
-    fig, axs = plt.subplots(2, 1, figsize=(10,6), sharex=True)
+    ###########################################
+    # Low-Frequency Filtering Integration     #
+    # (Based on study findings on EMG stress) #
+    ###########################################
+    # Apply a bandpass filter for the low-frequency range (0.5–4 Hz)
+    # which has been shown to improve stress detection.
+    df['ch1_low'] = butter_bandpass(df['ch1'].values, 0.5, 4, fs, order=4)
+    
+    # Rectify the low-frequency filtered signal
+    df['ch1_low_rect'] = np.abs(df['ch1_low'])
+    
+    # Smooth the rectified low-frequency signal using the same rolling average
+    df['ch1_low_smooth'] = pd.Series(df['ch1_low_rect']).rolling(window=window_size, center=True).mean()
+    df['ch1_low_smooth'].fillna(method='bfill', inplace=True)
+    df['ch1_low_smooth'].fillna(method='ffill', inplace=True)
+    
+    # Rescale the low-frequency smoothed signal to a stress level between 0 and 10
+    min_val_low = df['ch1_low_smooth'].min()
+    max_val_low = df['ch1_low_smooth'].max()
+    df['stress_low'] = 10 * (df['ch1_low_smooth'] - min_val_low) / (max_val_low - min_val_low + 1e-9)
 
-    # Top: Downsampled/Raw EMG signal
+    ####################
+    # Plotting Results #
+    ####################
+    fig, axs = plt.subplots(3, 1, figsize=(10,8), sharex=True)
+
+    # Plot 1: Raw EMG signal (Channel 1)
     axs[0].plot(df['time'], df['ch1'], label='EMG (Channel 1)', color='gray')
     axs[0].set_title('Downsampled Raw EMG Signal (First 1/5 of Data)')
     axs[0].set_ylabel('EMG (a.u.)')
     axs[0].legend()
 
-    # Bottom: Smoothed Stress Level
-    axs[1].plot(df['time'], df['stress'], label='Stress Level (0–10)', color='blue')
-    axs[1].set_title('Stress Level Over Time')
-    axs[1].set_xlabel('Time (s)')
+    # Plot 2: Stress level computed from the original method (rectification + smoothing)
+    axs[1].plot(df['time'], df['stress'], label='Stress Level (Original)', color='blue')
+    axs[1].set_title('Stress Level (Original Computation)')
     axs[1].set_ylabel('Stress Level (0–10)')
     axs[1].legend()
+
+    # Plot 3: Stress level computed from the low-frequency (0.5–4 Hz) filtered signal
+    axs[2].plot(df['time'], df['stress_low'], label='Stress Level (Low-Frequency)', color='green')
+    axs[2].set_title('Stress Level (Low-Frequency Filtered: 0.5–4 Hz)')
+    axs[2].set_xlabel('Time (s)')
+    axs[2].set_ylabel('Stress Level (0–10)')
+    axs[2].legend()
 
     plt.tight_layout()
     plt.show()

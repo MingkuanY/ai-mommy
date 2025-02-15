@@ -141,7 +141,7 @@ const page = (props: Props) => {
 									data={data}
 									margin={{ top: 15, right: 15, left: 15, bottom: 5 }}
 								>
-									<XAxis dataKey="name" stroke="#8884d8" />
+									<XAxis dataKey="time" stroke="#8884d8" />
 									<YAxis
 										yAxisId={1}
 										stroke="#8884d8"

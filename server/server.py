@@ -20,19 +20,19 @@ def hello_world():
 @app.route("/history", methods=["GET"])
 def get_history():
     try:
-        with open(HISTORY_FILE, "r") as file:
-            numbers = [int(line.strip())
-                       for line in file if line.strip().isdigit()]
+
+        # Read the existing numbers from the file
+        data = read_history()
 
         # numbers = numbers
 
         # Convert the numbers into the required Recharts format
         data = [
             {
-                "name": str(i),  # Use index as the name
-                "stress": num
+                "time": time,
+                "stress": stress
             }
-            for i, num in enumerate(numbers)
+            for time, stress in data
         ]
 
         return jsonify(data)
@@ -47,35 +47,39 @@ def add_random_number():
         # print("Adding random number")
 
         # Read the existing numbers from the file
-        numbers = []
-        try:
-            with open(HISTORY_FILE, "r") as file:
-                for line in file:
-                    if line.strip().isdigit():
-                        numbers.append(int(line.strip()))
-        except FileNotFoundError:
-            pass  # If file doesn't exist, start fresh
+        data = read_history()
 
-        # Ensure at most 30 numbers
-        if len(numbers) >= 20:
-            numbers.pop(0)
+        if len(data) > 20:
+            data.pop(0)
+
+        latest_time = data[-1][0]
 
         # Add a new random number
-        numbers.append(random.randint(0, 10))
+        new_time = latest_time + 1
+        new_stress = random.randint(0, 100)
+        data.append([new_time, new_stress])
 
         # Write back the updated numbers
         with open(HISTORY_FILE, "w") as file:
-            content = "\n".join(str(num) for num in numbers)
-            # print(content)
-            file.write(content + "\n")  # Ensure newline at end for readability
+            for time, stress in data:
+                file.write(f"{time} {stress}\n")
 
         sleep(1)  # Add a number every second
 
 
+def read_history():
+    # formatted as time stress with space in between
+    with open(HISTORY_FILE, "r") as file:
+        data = []
+        for line in file:
+            data.append([int(x) for x in line.strip().split()])
+    return data
+
+
 if __name__ == "__main__":
     # Start a thread to add random numbers to the history file
-    thread = Thread(target=add_random_number)
-    thread.start()
+    # thread = Thread(target=add_random_number)
+    # thread.start()
 
     # Binds to all available network interfaces
     app.run(host="0.0.0.0", port=5000, debug=False)

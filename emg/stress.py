@@ -68,7 +68,7 @@ def main():
     df['ch1_rect'] = df['ch1'].abs()
 
     # Step 2: Smooth the rectified signal with a rolling average
-    window_size = 800  # Adjust the window size as needed
+    window_size = 1000  # Adjust the window size as needed
     df['ch1_smooth'] = df['ch1_rect'].rolling(window=window_size, center=True).mean()
     df['ch1_smooth'].fillna(method='bfill', inplace=True)
     df['ch1_smooth'].fillna(method='ffill', inplace=True)
@@ -90,7 +90,8 @@ def main():
     df['ch1_low_rect'] = np.abs(df['ch1_low'])
     
     # Smooth the rectified low-frequency signal using the same rolling average
-    df['ch1_low_smooth'] = pd.Series(df['ch1_low_rect']).rolling(window=window_size, center=True).mean()
+    df['ch1_low_smooth'] = df['ch1_low_rect'].ewm(span=3000, adjust=False).mean()
+
     df['ch1_low_smooth'].fillna(method='bfill', inplace=True)
     df['ch1_low_smooth'].fillna(method='ffill', inplace=True)
     
@@ -98,6 +99,9 @@ def main():
     min_val_low = df['ch1_low_smooth'].min()
     max_val_low = df['ch1_low_smooth'].max()
     df['stress_low'] = 10 * (df['ch1_low_smooth'] - min_val_low) / (max_val_low - min_val_low + 1e-9)
+
+    #downsample the data to smooth
+    df = df.iloc[::100].reset_index(drop=True)
 
     ####################
     # Plotting Results #

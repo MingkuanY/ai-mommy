@@ -16,14 +16,25 @@ interface Props {}
 const page = (props: Props) => {
 	const [data, setData] = useState<any[]>();
 	useEffect(() => {
-		// fetch data from localhost 5000
-		fetch("http://127.0.0.1:5000/history")
-			.then((res) => res.json())
-			.then((data) => {
-				console.log(data);
-				setData(data);
-			});
-	}, []);
+		function fetchData() {
+			// fetch data from localhost 5000
+			fetch("http://127.0.0.1:5000/history")
+				.then((res) => res.json())
+				.then((data) => {
+					console.log(data);
+					setData(data);
+				});
+		}
+
+		// interval to fetch data every 5 seconds
+		fetchData();
+		const interval = setInterval(() => {
+			console.log("fetching data...");
+			fetchData();
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [setData]);
 
 	return (
 		<div className="w-screen min-h-screen flex flex-col items-center bg-pink-50">
@@ -93,6 +104,7 @@ const page = (props: Props) => {
 									/>
 									<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
 									<Line
+										animationDuration={0}
 										type="monotone"
 										dataKey="stress"
 										stroke="#f472b6"
@@ -146,6 +158,7 @@ const page = (props: Props) => {
 									/>
 									<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
 									<Line
+										animationDuration={0}
 										type="monotone"
 										dataKey="stress"
 										stroke="#f472b6"

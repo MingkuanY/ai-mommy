@@ -193,6 +193,10 @@ const page = (props: Props) => {
 				</div>
 			</div>
 
+			<p className="text-gray-400 text-center italic">
+				I know how you're feeling.
+			</p>
+
 			<div className="w-[50rem] bg-slate-100 rounded-lg p-4 flex flex-col gap-4">
 				<div className="flex flex-row gap-4">
 					<p className=" text-slate-700 flex-1 text-center italic ">
@@ -313,6 +317,10 @@ const page = (props: Props) => {
 					)}
 				</div> */}
 			</div>
+
+			<p className="text-gray-400 text-center italic mt-12">
+				I'm looking out for you. 🥺
+			</p>
 
 			<div className="w-full flex flex-col items-center gap-4 pb-20">
 				{actions &&

@@ -37,7 +37,7 @@ with open(file_path, "a") as file:
                     
                     # Create log entry with both raw data and rolling average
                     timestamp = datetime.now().strftime("%s")
-                    log_entry = f"{timestamp} Raw: {numeric_data:.2f} Rolling Avg: {rolling_avg:.2f}\n"
+                    log_entry = f"{timestamp} {rolling_avg:.2f}\n"
                     
                     print(log_entry, end="")  # Print to console
                     file.write(log_entry)

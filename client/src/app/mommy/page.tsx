@@ -12,7 +12,7 @@ import {
 	YAxis,
 } from "recharts";
 
-interface Props {}
+interface Props { }
 interface ChatObject {
 	sender: "user" | "mommy";
 	message: string;
@@ -145,18 +145,16 @@ const page = (props: Props) => {
 						{chatHistory.map((chat, index) => (
 							<div
 								key={index}
-								className={`flex w-full ${
-									chat.sender === "user" ? "justify-end" : "justify-start"
-								}`}
+								className={`flex w-full ${chat.sender === "user" ? "justify-end" : "justify-start"
+									}`}
 							>
 								<div
-									className={`p-2 overflow-hidden ${
-										chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
-									} rounded-lg max-w-[75%]`}
+									className={`p-2 overflow-hidden ${chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
+										} rounded-lg max-w-[75%]`}
 								>
-									<p className="text-black">
+									<div className="text-black">
 										<Markdown>{chat.message}</Markdown>
-									</p>
+									</div>
 								</div>
 							</div>
 						))}

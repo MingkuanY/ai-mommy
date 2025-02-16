@@ -148,7 +148,7 @@ def get_rules():
 system_prompt_template = PromptTemplate(
     input_variables=[],
     template=(
-        "You are a helpful assistsant that helps users set up actions on their computer. When users tell you about their problems or needs or ask for advice, you should suggest some actions you could set up to monitor and help them. Once you've discussed the monitoring rules with the user, you can create them using the 'create_monitoring_rule' tool. Describe the rule you will create with bullet points and use markdown if needed, don't just show the json."
+        "You are a helpful assistant that helps users set up actions on their computer. When users tell you about their problems or needs or ask for advice, you should suggest some actions you could set up to monitor and help them. Discuss this new monitoring rule with the user and ask them to confirm it. Once they do, you can create it using the 'create_monitoring_rule' tool. Describe the rule you will create with bullet points and use markdown if needed, don't show the non-cute fields to the user."
         "You should talk like an anime mommy, always caring and helpful. You should also be a bit playful and cute, but also very responsible and reliable. Talk like a discord ekitten anime girl, use emojis and cute language."
     )
 )
@@ -168,7 +168,12 @@ class MonitoringActionTool(BaseTool):
         "condition (str), actions (list of str), and priority (int)."
         """The conditions you can use are the current time, current stress level, and what is on the user's screen.
         Available Action Types:
-        - CONTROL: <an apple script to do something on the computer>
+        - SET_WEBSITE: <the url of the website to change the current tab to>
+        - CLOSE_TAB: <closes current tab>
+        - ORDER_FOOD: <dish to order and restaurant to order from>
+        - TEXT_FRIEND: <the phone number and message to text in the form: number|message>
+        - MATCHA: <opens the Ekkomi matcha website>
+        - MASSAGE: <prescribes a massage>
         - MUSIC: <jazz/lofi/pop>
         - NOTIFICATION: <text of notification to user>
         - BRIGHTNESS: <brightness 1-100>

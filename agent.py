@@ -30,6 +30,7 @@ class ActionType(str, Enum):
     ORDER_FOOD = "ORDER_FOOD"
     TEXT_FRIEND = "TEXT_FRIEND"
     MATCHA = "MATCHA"
+    MASSAGE = "MASSAGE"
     MUSIC = "MUSIC"
     NOTIFICATION = "NOTIFICATION"
     BRIGHTNESS = "BRIGHTNESS"
@@ -58,7 +59,7 @@ class MonitorResponse(BaseModel):
 class UserState(BaseModel):
     """Track user's current state and activity"""
     activity: str
-    stress_level: float
+    stress_level: str
     start_time: datetime
     end_time: Optional[datetime] = None
     duration: Optional[int] = None  # in minutes
@@ -71,7 +72,7 @@ class StateHistory:
         self.max_states = max_states
         self.current_state: Optional[UserState] = None
     
-    def update_state(self, activity: str, stress_level: float):
+    def update_state(self, activity: str, stress_level: str):
         current_time = datetime.now()
         
         # If activity changed, close current state and start new one
@@ -168,7 +169,7 @@ class StressMonitorAgent:
             print(f"Error loading rules from {self.rules_path}: {e}")
             # Return empty list if file cannot be loaded
             rules = []
-        self.monitoring_rules = [
+        example_rules = [
             # MonitoringRule(
             #     condition="High stress and distracting websites like twitter",
             #     actions=[
@@ -254,6 +255,7 @@ class StressMonitorAgent:
         - ORDER_FOOD: <dish to order and restaurant to order from>
         - TEXT_FRIEND: <the phone number and message to text in the form: number|message>
         - MATCHA: <opens the Ekkomi matcha website>
+        - MASSAGE: <prescribes a massage>
         - MUSIC: <jazz/lofi/pop>
         - NOTIFICATION: <text of notification to user>
         - BRIGHTNESS: <brightness 1-100>
@@ -301,11 +303,9 @@ class StressMonitorAgent:
     
     def get_stress_level(self):
         """Read stress level from stress.txt"""
-        try:
-            with open("stress.txt", "r") as f:
-                return float(f.read().strip())
-        except:
-            return 0.0
+        with open("stress.txt", "r") as f:
+            return f.read().strip()
+
     
     def get_current_activity(self):
         """Analyze current activity using active window"""
@@ -334,6 +334,8 @@ class StressMonitorAgent:
             self.execute_text_friend(action.value)
         elif action.action_type == ActionType.MATCHA:
             self.execute_matcha(action.value)
+        elif action.action_type == ActionType.MASSAGE:
+            self.execute_massage(action.value)
         elif action.action_type == ActionType.MUSIC:
             self.execute_music(action.value)
         elif action.action_type == ActionType.NOTIFICATION:
@@ -366,6 +368,7 @@ class StressMonitorAgent:
         """Execute computer control command"""
         if platform.system() == "Darwin":  # macOS
             number, message = number_and_message.split('|')
+            message.replace("'", "")
             os.system(f"""osascript applescripts/sendMessage.applescript {number} '{message}'""")
         print(f"Send '{message}' to {number}")
     
@@ -374,6 +377,23 @@ class StressMonitorAgent:
         if platform.system() == "Darwin":
             os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "https://ekkomi.com/collections/shop-teas"\'""")
         print(f"Opens matcha meditation session")
+    
+    def execute_massage(self, massage: str):
+        """Prescribes a massage"""
+        if platform.system() == "Darwin":
+            file_path = "shock.txt"
+
+            # Write "true" to the file
+            with open(file_path, "w") as file:
+                file.write("true")
+
+            # Wait for 1 second
+            time.sleep(0.5)
+
+            # Overwrite with "false"
+            with open(file_path, "w") as file:
+                file.write("false")
+        print(f"Prescribing a massage")
     
     def execute_music(self, genre: str):
         """Execute music genre change"""
@@ -401,6 +421,8 @@ class StressMonitorAgent:
             try:
                 # Reload rules on each iteration
                 self.monitoring_rules = self.load_monitoring_rules()
+                if not self.monitoring_rules:
+                    continue
                 
                 # Gather current state
                 current_time = datetime.now().strftime("%H:%M:%S")

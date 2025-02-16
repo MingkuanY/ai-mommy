@@ -5,5 +5,12 @@
             "Send reminder: 'Nyaa~ You've been on YouTube for quite a while, darling. How about a little break? \ud83d\udc96'"
         ],
         "priority": 2
+    },
+    {
+        "condition": "Time > 16:30 AND Application = 'YouTube'",
+        "actions": [
+            "Close Application 'YouTube'"
+        ],
+        "priority": 1
     }
 ]

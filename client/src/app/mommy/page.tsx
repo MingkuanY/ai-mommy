@@ -101,7 +101,7 @@ const page = (props: Props) => {
 			} catch (e) {
 				console.log("Error fetching data");
 			}
-		}, 5000);
+		}, 500);
 
 		return () => clearInterval(interval);
 	}, [setData]);
@@ -200,6 +200,8 @@ const page = (props: Props) => {
 										stroke="#8884d8"
 										// label={"ur stress 🥺"}
 										mirror={true}
+										domain={[0, 500]}
+										max={500}
 									/>
 									<Tooltip
 										contentStyle={{

@@ -6,7 +6,8 @@ from datetime import datetime
 file_path = "../server/history.txt"
 
 try:
-    arduino = serial.Serial(port='/dev/cu.usbmodem11401', baudrate=115200, timeout=.1)
+    arduino = serial.Serial(port='/dev/cu.usbmodem11401',
+                            baudrate=115200, timeout=.1)
     time.sleep(2)  # Let connection settle
 except serial.SerialException as e:
     print(f"Error: {e}")
@@ -15,9 +16,11 @@ except serial.SerialException as e:
 with open(file_path, "a") as file:
     while True:
         try:
-            data = arduino.readline().decode('ascii').rstrip()  # Read the data, decode, and strip
+            # Read the data, decode, and strip
+            data = arduino.readline().decode('ascii').rstrip()
             if data:
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # timestamp as seconds since utc
+                timestamp = datetime.now().strftime("%s")
                 log_entry = f"{timestamp} {data}\n"
                 print(log_entry, end="")  # Print to console
                 file.write(log_entry)

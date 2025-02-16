@@ -1,8 +1,10 @@
+import numpy as np
+from collections import defaultdict
 import random
 import json
 from threading import Thread
 from time import sleep
-from stress import compute_stress_data_from_file
+# from stress import compute_stress_data_from_file
 from typing import Dict, List
 
 from dotenv import load_dotenv
@@ -225,17 +227,48 @@ def add_random_number():
 
 
 def read_history():
-    # formatted as time stress with space in between
-    # with open(HISTORY_FILE, "r") as file:
-    #     data = []
-    #     for line in file:
-    #         data.append([int(x) for x in line.strip().split()])
-    samples_to_read = 100
-    with open("samples.txt", "r") as file:
-        samples_to_read = int(file.read())
-    print('samples_to_read', samples_to_read)
-    data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
-    return data
+    # Read all lines and parse them into [timestamp, stress]
+    with open(HISTORY_FILE, "r") as file:
+        data = []
+        for line in file:
+            if line.strip():
+                parts = line.strip().split()
+                try:
+                    # Use float in case timestamps are in floating point.
+                    timestamp = float(parts[0])
+                    stress = float(parts[1])
+                    data.append([timestamp, stress])
+                except (IndexError, ValueError):
+                    continue  # skip malformed lines
+
+    # Use the last 5000 points (if available)
+    data = data[-5000:]
+    if not data:
+        return []
+
+    # Group the 5000 data points into 10 bins of 500 points each (each bin ~0.5s)
+    bin_size = 500
+    result = []
+    # Loop over the data in chunks of 500
+    for i in range(0, len(data), bin_size):
+        bin_data = data[i:i + bin_size]
+        if not bin_data:
+            continue
+        # Compute the average stress for this bin
+        avg_stress = sum(point[1] for point in bin_data) / len(bin_data)
+        # Use the first point's timestamp as the label (older edge of the interval)
+        label_timestamp = bin_data[0][0]
+        result.append([label_timestamp, avg_stress])
+
+    return result
+
+    # samples_to_read = 100
+    # with open("samples.txt", "r") as file:
+    #     samples_to_read = int(file.read())
+    # # print('samples_to_read', samples_to_read)
+    # # data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
+    # # return data
+    # return samples_to_read
 
 
 if __name__ == "__main__":

@@ -1,12 +1,18 @@
+
 from threading import Thread
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import random
 from time import sleep
+from dotenv import load_dotenv
+from openai import OpenAI
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+load_dotenv()
+openai_client = OpenAI()
 
 
 HISTORY_FILE = "history.txt"  # Change this to the actual file path
@@ -40,6 +46,70 @@ def get_history():
         return jsonify({"error": "History file not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# post for adding a query
+@app.route("/ask", methods=["POST"])  # todo: remove get
+def handle_query():
+    # message = request.json["message"]
+    history = request.json["history"]
+
+    # history looks like array of
+    #     interface ChatObject {
+    # 	sender: "user" | "mommy";
+    # 	message: string;
+    # }
+
+    # map history to openai message format
+    messages = [
+        {"role": "system", "content": "You are an anime mommy that tries to make the user feel comforted in conversation. Talk like an anime mommy discord ekitten."},
+    ]
+    for chat in history:
+        role = "user" if chat["sender"] == "user" else "assistant"
+        messages.append({"role": role, "content": chat["message"]})
+
+    def generate_response():
+        stream = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=150,
+            stream=True
+        )
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
+
+    # Wrap the generator in a Response and set the mimetype
+    return Response(generate_response(), mimetype='text/plain')
+
+# def handle_query():
+#     # has query in the body
+#     query = request.json["query"]
+
+#     def generate_response():
+#         stream = openai_client.chat.completions(
+#             model="gpt-3.5-turbo",
+#             messages=[
+#                 {"role": "system", "content": "You are an anime mommy that tries to make the user feel comforted in conversation. Talk like an anime mommy discord ekitten."},
+#                 {"role": "user", "content": query},
+#             ],
+#             max_tokens=150,
+#             stream=True
+#         )
+
+#         for chunk in stream:
+#             if chunk.choices[0].delta.content is not None:
+#                 yield (chunk.choices[0].delta.content)
+
+#     return "hi", {'Content-Type': 'text/plain'}
+    # return generate_response(), {'Content-Type': 'text/plain'}
+
+    # response = Response(generate_response(), content_type="text/plain")
+    # response.headers.add("Access-Control-Allow-Origin", "*")
+    # response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    # response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+
+    # return response
 
 
 def add_random_number():
@@ -82,4 +152,4 @@ if __name__ == "__main__":
     # thread.start()
 
     # Binds to all available network interfaces
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=True)

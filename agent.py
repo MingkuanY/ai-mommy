@@ -158,7 +158,7 @@ class StressMonitorAgent:
             # Convert JSON data to MonitoringRule objects
             input_rules = []
             for rule in rules_data:
-                rules.append(MonitoringRule(
+                input_rules.append(MonitoringRule(
                     condition=rule['condition'],
                     actions=rule['actions'],
                     priority=rule['priority']

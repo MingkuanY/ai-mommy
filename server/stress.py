@@ -26,7 +26,7 @@ def read_emg_data(filename):
     df['time'] = df['time'] / 1000.0
     return df
 
-def preprocess_data(df, fraction=0.2):
+def preprocess_data(df, fraction=1):
     """
     Preprocess the DataFrame by selecting only the first fraction of the data.
     
@@ -92,14 +92,13 @@ def compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000):
     
     return list(zip(time_down, stress_down))
 
-def compute_stress_data_from_file(filename):
+def compute_stress_data_from_file(filename, num_samples=100):
     df = read_emg_data(filename)
-    df = preprocess_data(df, fraction=0.2)
     fs = compute_sampling_frequency(df)
     np_data = compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000)
     # turn into python list
     data = list(np_data)
-    return data
+    return data[:num_samples]
 
 def main():
     filename = "sample_history.txt"

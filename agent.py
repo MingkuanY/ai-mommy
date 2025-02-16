@@ -26,10 +26,10 @@ class MonitoringRule(BaseModel):
 
 class ActionType(str, Enum):
     SET_WEBSITE = "SET_WEBSITE"
-    CHANGE_TAB = "CHANGE_TAB"
     CLOSE_TAB = "CLOSE_TAB"
     ORDER_FOOD = "ORDER_FOOD"
     TEXT_FRIEND = "TEXT_FRIEND"
+    MATCHA = "MATCHA"
     MUSIC = "MUSIC"
     NOTIFICATION = "NOTIFICATION"
     BRIGHTNESS = "BRIGHTNESS"
@@ -150,23 +150,250 @@ class StressMonitorAgent:
 
     def load_monitoring_rules(self) -> List[MonitoringRule]:
         """Load monitoring rules from rules.json file"""
+        rules = ""
         try:
             with open(self.rules_path, 'r') as f:
                 rules_data = json.load(f)
             
             # Convert JSON data to MonitoringRule objects
-            rules = []
+            input_rules = []
             for rule in rules_data:
                 rules.append(MonitoringRule(
                     condition=rule['condition'],
                     actions=rule['actions'],
                     priority=rule['priority']
                 ))
-            return rules
+            rules = input_rules
         except Exception as e:
             print(f"Error loading rules from {self.rules_path}: {e}")
             # Return empty list if file cannot be loaded
-            return []
+            rules = []
+        self.monitoring_rules = [
+            # MonitoringRule(
+            #     condition="High stress and distracting websites like twitter",
+            #     actions=[
+            #         "CONTROL: close the distracting thing and suggest a better relaxing activity. ex take control of safari and change the page to something productive",
+            #         "NOTIFICATION: Suggest a more productive activity",
+            #         "MUSIC: play a relaxing genre on spotify"
+            #     ],
+            #     priority=1
+            # ),
+            # MonitoringRule(
+            #     condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
+            #     actions=[
+            #         "NOTIFICATION: Suggest educational activities if too much YouTube",
+            #         "SET_WEBSITE: Switch to educational content, if student is not complying within a reasonable amount of time"
+            #     ],
+            #     priority=1
+            # ),
+            # MonitoringRule(
+            #     condition="Homework stress",
+            #     actions=[
+            #         "NOTIFICATION: Offer hints and problem-solving help",
+            #         "MUSIC: Play focus-enhancing music"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Suggest texting friends",
+            #         "TEXT_FRIEND: Text 727-457-4433 with message 'text me im stressed'"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on youtube",
+            #     actions=[
+            #         "NOTIFICATION: Suggest lowering brightness to decrease stimulation",
+            #         "BRIGHTNESS: lower brightness to 0.2"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Start a meditation session to de-stress",
+            #         "MATCHA"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Close this distracting tab",
+            #         "CLOSE_TAB"
+            #     ],
+            #     priority=2
+            # ),
+        ]
+        self.monitor_prompt = """
+        You are a helpful monitoring assistant. Based on the following information:
+        
+        Current Time: {time}
+        Current Stress Level: {stress_level}
+        Current App: {current_activity}
+        
+        Recent Activity History (last hour):
+        {recent_activities}
+        
+        Recent Actions Taken:
+        {recent_actions}
+        
+        MONITORING RULES TO FOLLOW:
+        {monitoring_rules}
+        
+        Your job is to check if any of the monitoring rules apply to the current situation and its history.
+        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
+        
+        {format_instructions}
+        
+        Available Action Types:
+        - SET_WEBSITE: <the url of the website to change the current tab to>
+        - CLOSE_TAB: <closes current tab>
+        - ORDER_FOOD: <dish to order and restaurant to order from>
+        - TEXT_FRIEND: <the phone number and message to text in the form: number|message>
+        - MATCHA: <opens the Ekkomi matcha website>
+        - MUSIC: <jazz/lofi/pop>
+        - NOTIFICATION: <text of notification to user>
+        - BRIGHTNESS: <brightness 1-100>
+        - COLOR: <kelvin of screen temperature>
+        
+        You can recommend multiple actions if needed. For example:
+        {{
+            "actions": [
+                {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
+                {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
+                {{"action_type": "SET_WEBSITE", "value": "https://youtu.be/s9M30w085SY", "reasoning": "more educational content/'"}}
+            ],
+            "analysis": "User has been working intensely and needs music"
+        }}
+        
+        Respond with the appropriate action(s) based on the monitoring rules, or empty json if no actions are recommended:
+        """
+        return rules
+    
+    def format_monitoring_rules(self):
+        """Format monitoring rules for the prompt"""
+        rules_text = "MONITORING RULES:\n"
+        for i, rule in enumerate(self.monitoring_rules, 1):
+            rules_text += f"\nRule {i} (Priority {rule.priority}):\n"
+            rules_text += f"Watch for: {rule.condition}\n"
+            rules_text += "Possible actions:\n"
+            for action in rule.actions:
+                rules_text += f"- {action}\n"
+        return rules_text
+    
+    def add_monitoring_rule(self, condition: str, actions: List[str], priority: int = 3):
+        """Add a new monitoring rule"""
+        new_rule = MonitoringRule(
+            condition=condition,
+            actions=actions,
+            priority=priority
+        )
+        self.monitoring_rules.append(new_rule)
+    
+    def get_screenshot(self):
+        """Take a screenshot and save it temporarily"""
+        screenshot = pyautogui.screenshot()
+        screenshot.save("temp_screenshot.png")
+        return "temp_screenshot.png"
+    
+    def get_stress_level(self):
+        """Read stress level from stress.txt"""
+        try:
+            with open("stress.txt", "r") as f:
+                return float(f.read().strip())
+        except:
+            return 0.0
+    
+    def get_current_activity(self):
+        """Analyze current activity using active window"""
+        if platform.system() == "Darwin":  # macOS
+            cmd = """osascript -e 'tell application "System Events"' -e 'set frontApp to name of first application process whose frontmost is true' -e 'end tell'"""
+            output = subprocess.check_output(cmd, shell=True).decode().strip()
+            return output
+        elif platform.system() == "Windows":
+            import win32gui
+            window = win32gui.GetForegroundWindow()
+            return win32gui.GetWindowText(window)
+        return "Unknown Application"
+    
+    def execute_action(self, action: MonitorAction):
+        """Execute the recommended action"""
+        print(f"Executing action: {action.action_type} with value: {action.value}")
+        print(f"Reasoning: {action.reasoning}")
+        
+        if action.action_type == ActionType.SET_WEBSITE:
+            self.execute_set_website(action.value)
+        elif action.action_type == ActionType.CLOSE_TAB:
+            self.execute_close_tab(action.value)
+        elif action.action_type == ActionType.ORDER_FOOD:
+            self.execute_order_food(action.value)
+        elif action.action_type == ActionType.TEXT_FRIEND:
+            self.execute_text_friend(action.value)
+        elif action.action_type == ActionType.MATCHA:
+            self.execute_matcha(action.value)
+        elif action.action_type == ActionType.MUSIC:
+            self.execute_music(action.value)
+        elif action.action_type == ActionType.NOTIFICATION:
+            self.send_notification(action.value)
+        elif action.action_type == ActionType.BRIGHTNESS:
+            self.set_brightness(action.value)
+        elif action.action_type == ActionType.COLOR:
+            self.set_color_temperature(action.value)
+        
+        # Record the action in history
+        self.action_history.add_action(action)
+    
+    def execute_set_website(self, url: str):
+        """Execute computer control command"""
+        if platform.system() == "Darwin":  # macOS
+            os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "{url}"\'""")
+        print(f"Set website to: {url}")
+    
+    def execute_close_tab(self, msg: str):
+        """Execute computer control command"""
+        if platform.system() == "Darwin":  # macOS
+            os.system(f"""osascript -e \'tell application "Safari" to tell front window to close current tab\'""")
+        print(f"Closes current tab: {msg}")
+    
+    def execute_order_food(self, dish_and_restaurant: str):
+        """Execute computer control command"""
+        print(f"Orders {dish_and_restaurant}")
+    
+    def execute_text_friend(self, number_and_message: str):
+        """Execute computer control command"""
+        if platform.system() == "Darwin":  # macOS
+            number, message = number_and_message.split('|')
+            os.system(f"""osascript applescripts/sendMessage.applescript {number} '{message}'""")
+        print(f"Send '{message}' to {number}")
+    
+    def execute_matcha(self, matcha: str):
+        """Opens matcha meditation website"""
+        if platform.system() == "Darwin":
+            os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "https://ekkomi.com/collections/shop-teas"\'""")
+        print(f"Opens matcha meditation session")
+    
+    def execute_music(self, genre: str):
+        """Execute music genre change"""
+        # Add Spotify API implementation
+        print(f"Changing music to: {genre}")
+    
+    def send_notification(self, message: str):
+        """Send system notification"""
+        if platform.system() == "Darwin":  # macOS
+            os.system(f"""osascript -e 'display notification "{message}" with title "Stress Monitor"'""")
+        # Add Windows notification implementation
+    
+    def set_brightness(self, level: str):
+        """Set screen brightness"""
+        print(f"Setting brightness to: {level}")
+    
+    def set_color_temperature(self, temperature: str):
+        """Set screen color temperature"""
+        # Add OS-specific color temperature control
+        print(f"Setting color temperature to: {temperature}")
     
     def monitor_loop(self):
         """Main monitoring loop"""

@@ -201,7 +201,7 @@ function Action({ action, data }: { action: any; data?: any[] }) {
 					{action.condition_cute}
 				</p>
 				<ul className="text-gray-700 space-y-1">
-					{action.actions_cute.map((action: string, index) => (
+					{action.actions_cute.map((action: string, index: number) => (
 						<li key={index} className="list-none">
 							{action}
 						</li>

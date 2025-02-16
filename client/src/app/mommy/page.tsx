@@ -77,6 +77,7 @@ const page = (props: Props) => {
 	}
 
 	const [data, setData] = useState<any[]>();
+	const [biometrics, setBiometrics] = useState<any>();
 	useEffect(() => {
 		function fetchData() {
 			// fetch data from localhost 5000
@@ -84,7 +85,8 @@ const page = (props: Props) => {
 				.then((res) => res.json())
 				.then((data) => {
 					console.log(data);
-					setData(data);
+					setData(data.history);
+					setBiometrics(data.biometrics);
 				});
 		}
 
@@ -186,14 +188,14 @@ const page = (props: Props) => {
 			<div className="w-full flex flex-col items-center gap-8 pb-20">
 				{actions &&
 					actions.map((action: any, index) => (
-						<Action action={action} data={data} key={index} />
+						<Action action={action} data={data} biometrics={biometrics} key={index} />
 					))}
 			</div>
 		</div>
 	);
 };
 
-function Action({ action, data }: { action: any; data?: any[] }) {
+function Action({ action, data, biometrics }: { action: any; data?: any[]; biometrics?: any }) {
 	return (
 		<div className="flex w-[50rem] bg-pink-100 rounded-lg p-4 gap-4">
 			<div className="flex flex-1 flex-col gap-4">
@@ -211,7 +213,7 @@ function Action({ action, data }: { action: any; data?: any[] }) {
 					{action.priority_cute}
 				</p>
 			</div>
-			<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1">
+			<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1 flex-col gap-2">
 				{data && (
 					<ResponsiveContainer width="100%" height="100%">
 						<LineChart
@@ -250,7 +252,23 @@ function Action({ action, data }: { action: any; data?: any[] }) {
 						</LineChart>
 					</ResponsiveContainer>
 				)}
+				{biometrics && (
+					<div className="flex gap-2">
+						<Number number={Math.round(biometrics?.heart_rate)} />
+						<Number number={Math.round(biometrics?.blood_pressure_high) + "/" + Math.round(biometrics?.blood_pressure_low)} />
+						<Number number={Math.round(biometrics?.body_temperature)} />
+					</div>
+				)}
 			</div>
+			
+		</div>
+	);
+}
+
+function Number({ number }: { number: any }) {
+	return (
+		<div className="flex gap-2 bg-pink-200 rounded-lg p-2">
+			<p className="text-gray-700">{number}</p>
 		</div>
 	);
 }

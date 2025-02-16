@@ -32,6 +32,9 @@ terra = Terra(api_key="t0PMr4YpxCVtYc0M7bYGSpBuRwujEPvp", dev_id="4actk-aimommy-
 # --- File Paths ---
 HISTORY_FILE = "history.txt"  # Change this to the actual file path
 RULES_FILE = "rules.json"      # Change this to the actual file path
+HEART_RATE_FILE = "heart_rate.txt"
+BLOOD_PRESSURE_FILE = "blood_pressure.txt"
+BODY_TEMPERATURE_FILE = "body_temperature.txt"
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -40,6 +43,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 load_dotenv()
 
 # --- Monitoring Rule Definitions ---
+
 
 
 class MonitoringRule(BaseModel):
@@ -135,8 +139,16 @@ def get_history():
     print("Getting history rahhh")
     try:
         data = read_history()
+        biometrics = get_bio_data()
+        print("Biometrics: ", biometrics)
+
         data = [{"time": time, "stress": stress} for time, stress in data]
-        return jsonify(data)
+
+        complete_data = {
+            "history": data,
+            "biometrics": biometrics
+        }
+        return jsonify(complete_data)
     except FileNotFoundError:
         return jsonify({"error": "History file not found"}), 404
     except Exception as e:
@@ -263,6 +275,26 @@ def add_random_number():
     # # data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
     # # return data
     # return samples_to_read
+
+def get_bio_data():
+    with open(HEART_RATE_FILE, "r") as file:
+        heart_rate = float(file.readlines()[-1].strip())
+
+    with open(BLOOD_PRESSURE_FILE, "r") as file:
+        blood_pressure = [float(x) for x in file.readlines()[-1].strip().split(",")]
+
+    with open(BODY_TEMPERATURE_FILE, "r") as file:
+        body_temperature = float(file.readlines()[-1].strip())
+
+    biometrics = {
+        "heart_rate": heart_rate,
+        "blood_pressure_high": blood_pressure[0],
+        "blood_pressure_low": blood_pressure[1],
+        "body_temperature": body_temperature
+    }
+
+    return biometrics
+
 
 @app.route("/consumeTerraWebhook", methods=["POST"])
 def consume_terra_webhook() -> flask.Response:

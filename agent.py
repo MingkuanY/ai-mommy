@@ -150,23 +150,24 @@ class StressMonitorAgent:
 
     def load_monitoring_rules(self) -> List[MonitoringRule]:
         """Load monitoring rules from rules.json file"""
+        rules = ""
         try:
             with open(self.rules_path, 'r') as f:
                 rules_data = json.load(f)
             
             # Convert JSON data to MonitoringRule objects
-            rules = []
+            input_rules = []
             for rule in rules_data:
                 rules.append(MonitoringRule(
                     condition=rule['condition'],
                     actions=rule['actions'],
                     priority=rule['priority']
                 ))
-            return rules
+            rules = input_rules
         except Exception as e:
             print(f"Error loading rules from {self.rules_path}: {e}")
             # Return empty list if file cannot be loaded
-            return []
+            rules = []
         self.monitoring_rules = [
             # MonitoringRule(
             #     condition="High stress and distracting websites like twitter",
@@ -270,6 +271,7 @@ class StressMonitorAgent:
         
         Respond with the appropriate action(s) based on the monitoring rules, or empty json if no actions are recommended:
         """
+        return rules
     
     def format_monitoring_rules(self):
         """Format monitoring rules for the prompt"""

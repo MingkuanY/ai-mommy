@@ -134,7 +134,6 @@ class ActionHistory:
     def get_recent_actions(self, count: int = 5) -> List[Dict]:
         return list(self.actions)[-count:]
 
-
 class StressMonitorAgent:
     def __init__(self, openai_api_key):
         self.llm = ChatOpenAI(
@@ -146,6 +145,28 @@ class StressMonitorAgent:
         self.parser = PydanticOutputParser(pydantic_object=MonitorResponse)
         self.state_history = StateHistory()
         self.action_history = ActionHistory()
+        self.rules_path = os.path.join("server", "rules.json")
+        self.monitoring_rules = self.load_monitoring_rules()
+
+    def load_monitoring_rules(self) -> List[MonitoringRule]:
+        """Load monitoring rules from rules.json file"""
+        try:
+            with open(self.rules_path, 'r') as f:
+                rules_data = json.load(f)
+            
+            # Convert JSON data to MonitoringRule objects
+            rules = []
+            for rule in rules_data:
+                rules.append(MonitoringRule(
+                    condition=rule['condition'],
+                    actions=rule['actions'],
+                    priority=rule['priority']
+                ))
+            return rules
+        except Exception as e:
+            print(f"Error loading rules from {self.rules_path}: {e}")
+            # Return empty list if file cannot be loaded
+            return []
         self.monitoring_rules = [
             # MonitoringRule(
             #     condition="High stress and distracting websites like twitter",
@@ -376,8 +397,11 @@ class StressMonitorAgent:
         """Main monitoring loop"""
         while True:
             try:
+                # Reload rules on each iteration
+                self.monitoring_rules = self.load_monitoring_rules()
+                
                 # Gather current state
-                current_time = datetime.now().strftime("%H:%M")
+                current_time = datetime.now().strftime("%H:%M:%S")
                 screenshot_path = self.get_screenshot()
                 stress_level = self.get_stress_level()
                 current_activity = self.get_current_activity()
@@ -396,25 +420,24 @@ class StressMonitorAgent:
                     monitoring_rules=self.format_monitoring_rules(),
                     format_instructions=self.parser.get_format_instructions()
                 )
-                # print(formatted_prompt)
 
                 messages = [
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": formatted_prompt
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{base64_image}"
-                                    }
-                                },
-                            ]
-                        }
-                    ]
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": formatted_prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
+                            },
+                        ]
+                    }
+                ]
 
                 # Get AI recommendation with structured output
                 response = self.llm.invoke(messages)
@@ -435,7 +458,6 @@ class StressMonitorAgent:
             except Exception as e:
                 print(f"Error in monitoring loop: {e}")
                 time.sleep(5)
-
 
 def main():
     # Initialize the agent

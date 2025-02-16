@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Markdown from "react-markdown";
 import {
 	CartesianGrid,
 	Line,
@@ -72,6 +73,7 @@ const page = (props: Props) => {
 				}
 			});
 		}
+		fetchActions();
 	}
 
 	const [data, setData] = useState<any[]>();
@@ -87,14 +89,41 @@ const page = (props: Props) => {
 		}
 
 		// interval to fetch data every 5 seconds
-		fetchData();
+		try {
+			fetchData();
+		} catch (e) {
+			console.log("Error fetching data");
+		}
+
 		const interval = setInterval(() => {
 			console.log("fetching data...");
-			fetchData();
-		}, 1000);
+			try {
+				fetchData();
+			} catch (e) {
+				console.log("Error fetching data");
+			}
+		}, 500);
 
 		return () => clearInterval(interval);
 	}, [setData]);
+
+	const [actions, setActions] = useState<any[]>();
+	function fetchActions() {
+		fetch("http://127.0.0.1:5000/rules")
+			.then((res) => res.json())
+			.then((data) => {
+				console.log(data);
+				setActions(data);
+			});
+	}
+	useEffect(() => {
+		// interval to fetch data every 5 seconds
+		try {
+			fetchActions();
+		} catch (e) {
+			console.log("Error fetching actions");
+		}
+	}, [setActions]);
 
 	return (
 		<div className="w-screen min-h-screen flex flex-col items-center bg-pink-50">
@@ -110,32 +139,28 @@ const page = (props: Props) => {
 				</p>
 
 				{chatHistory.length > 0 && (
-					<>
-						<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2">
-							{chatHistory.map((chat, index) => (
+					<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2 max-h-[80vh] overflow-scroll">
+						{chatHistory.map((chat, index) => (
+							<div
+								key={index}
+								className={`flex w-full ${
+									chat.sender === "user" ? "justify-end" : "justify-start"
+								}`}
+							>
 								<div
-									key={index}
-									className={
-										chat.sender === "user"
-											? "flex-row w-full flex pl-4"
-											: "flex-row w-full flex pr-4"
-									}
+									className={`p-2 overflow-hidden ${
+										chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
+									} rounded-lg max-w-[75%]`}
 								>
-									{/* spacer */}
-									<div className="flex-1"></div>
-									<div
-										key={index}
-										className={`p-2 ${
-											chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
-										} rounded-lg`}
-									>
-										<p className="text-black">{chat.message}</p>
-									</div>
+									<p className="text-black">
+										<Markdown>{chat.message}</Markdown>
+									</p>
 								</div>
-							))}
-						</div>
-					</>
+							</div>
+						))}
+					</div>
 				)}
+
 				<div className="w-[40rem] bg-pink-100 rounded-lg p-4">
 					<input
 						type="text"
@@ -159,124 +184,75 @@ const page = (props: Props) => {
 			</div>
 
 			<div className="w-full flex flex-col items-center gap-8 pb-20">
-				{/* First Card */}
-				<div className="flex w-[50rem] bg-pink-100 rounded-lg p-4 gap-4">
-					<div className="flex-1">
-						<p className="font-semibold italic text-black">
-							<span className="font-bold">
-								when the news feels heavy and your heart starts to race...
-							</span>{" "}
-							~ 💞🕊️
-						</p>
-						<ul className="mt-2 text-gray-700 space-y-1">
-							<li>🐱 pull up videos of cute little kitties for you, uwu~ ✨</li>
-							<li>
-								🌐 search the web for happy little stories in the world, just
-								for you 💗
-							</li>
-						</ul>
-					</div>
-					<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1">
-						{/* Placeholder for Graph */}
-						{/* <p className="text-sm text-gray-500">
-							📈 ur stress after last activation 😅
-						</p> */}
-
-						{data && (
-							<ResponsiveContainer width="100%" height="100%">
-								<LineChart
-									data={data}
-									margin={{ top: 15, right: 15, left: 15, bottom: 5 }}
-								>
-									<XAxis dataKey="name" stroke="#8884d8" />
-									<YAxis
-										yAxisId={1}
-										stroke="#8884d8"
-										// label={"ur stress 🥺"}
-										mirror={true}
-									/>
-									<Tooltip
-										contentStyle={{
-											backgroundColor: "#fff",
-											borderRadius: "8px",
-											border: "none",
-											boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
-										}}
-									/>
-									<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-									<Line
-										animationDuration={0}
-										type="monotone"
-										dataKey="stress"
-										stroke="#f472b6"
-										strokeWidth={3}
-										yAxisId={1}
-										dot={false}
-										// dot={{ r: 5, strokeWidth: 2, fill: "#f472b6" }}
-										activeDot={{ r: 8 }}
-									/>
-								</LineChart>
-							</ResponsiveContainer>
-						)}
-					</div>
-				</div>
-
-				{/* Second Card */}
-				<div className="flex w-[50rem] bg-pink-100 rounded-lg p-4 gap-4">
-					<div className="flex-1">
-						<p className="font-semibold italic text-black">
-							<span className="font-bold">when you're feeling lonely...</span> ~
-							🪽🌙
-						</p>
-						<ul className="mt-2 text-gray-700 space-y-1">
-							<li>📜 find text messages from ur loved ones</li>
-							<li>🥰 play mommy asmr on youtube</li>
-						</ul>
-					</div>
-					<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1">
-						{/* Placeholder for Graph */}
-						{/* <p className="text-sm text-gray-500">📉 stress over time</p> */}
-						{data && (
-							<ResponsiveContainer width="100%" height="100%">
-								<LineChart
-									data={data}
-									margin={{ top: 15, right: 15, left: 15, bottom: 5 }}
-								>
-									<XAxis dataKey="time" stroke="#8884d8" />
-									<YAxis
-										yAxisId={1}
-										stroke="#8884d8"
-										// label={"ur stress 🥺"}
-										mirror={true}
-									/>
-									<Tooltip
-										contentStyle={{
-											backgroundColor: "#fff",
-											borderRadius: "8px",
-											border: "none",
-											boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
-										}}
-									/>
-									<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-									<Line
-										animationDuration={0}
-										type="monotone"
-										dataKey="stress"
-										stroke="#f472b6"
-										strokeWidth={3}
-										yAxisId={1}
-										dot={false}
-										// dot={{ r: 5, strokeWidth: 2, fill: "#f472b6" }}
-										activeDot={{ r: 8 }}
-									/>
-								</LineChart>
-							</ResponsiveContainer>
-						)}
-					</div>
-				</div>
+				{actions &&
+					actions.map((action: any, index) => (
+						<Action action={action} data={data} key={index} />
+					))}
 			</div>
 		</div>
 	);
 };
+
+function Action({ action, data }: { action: any; data?: any[] }) {
+	return (
+		<div className="flex w-[50rem] bg-pink-100 rounded-lg p-4 gap-4">
+			<div className="flex flex-1 flex-col gap-4">
+				<p className="font-semibold italic text-black">
+					{action.condition_cute}
+				</p>
+				<ul className="text-gray-700 space-y-1">
+					{action.actions_cute.map((action: string, index: number) => (
+						<li key={index} className="list-none">
+							{action}
+						</li>
+					))}
+				</ul>
+				<p className="font-semibold italic text-black">
+					{action.priority_cute}
+				</p>
+			</div>
+			<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1">
+				{data && (
+					<ResponsiveContainer width="100%" height="100%">
+						<LineChart
+							data={data}
+							margin={{ top: 15, right: 15, left: 15, bottom: 5 }}
+						>
+							<XAxis dataKey="name" stroke="#8884d8" />
+							<YAxis
+								yAxisId={1}
+								stroke="#8884d8"
+								// label={"ur stress 🥺"}
+								mirror={true}
+								domain={[0, 500]}
+								max={500}
+							/>
+							<Tooltip
+								contentStyle={{
+									backgroundColor: "#fff",
+									borderRadius: "8px",
+									border: "none",
+									boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.1)",
+								}}
+							/>
+							<CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+							<Line
+								animationDuration={0}
+								type="monotone"
+								dataKey="stress"
+								stroke="#f472b6"
+								strokeWidth={3}
+								yAxisId={1}
+								dot={false}
+								// dot={{ r: 5, strokeWidth: 2, fill: "#f472b6" }}
+								activeDot={{ r: 8 }}
+							/>
+						</LineChart>
+					</ResponsiveContainer>
+				)}
+			</div>
+		</div>
+	);
+}
 
 export default page;

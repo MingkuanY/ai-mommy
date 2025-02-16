@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import random
 from time import sleep
-
+from stress import compute_stress_data_from_file
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
@@ -69,10 +69,12 @@ def add_random_number():
 
 def read_history():
     # formatted as time stress with space in between
-    with open(HISTORY_FILE, "r") as file:
-        data = []
-        for line in file:
-            data.append([int(x) for x in line.strip().split()])
+    # with open(HISTORY_FILE, "r") as file:
+    #     data = []
+    #     for line in file:
+    #         data.append([int(x) for x in line.strip().split()])
+    data = compute_stress_data_from_file("sample_history.txt")
+    print(data[:10])
     return data
 
 

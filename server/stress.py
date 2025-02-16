@@ -96,7 +96,10 @@ def compute_stress_data_from_file(filename):
     df = read_emg_data(filename)
     df = preprocess_data(df, fraction=0.2)
     fs = compute_sampling_frequency(df)
-    return compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000)
+    np_data = compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000)
+    # turn into python list
+    data = list(np_data)
+    return data
 
 def main():
     filename = "sample_history.txt"

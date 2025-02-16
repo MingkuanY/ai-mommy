@@ -56,3 +56,21 @@ with open(file_path, "a") as file:
         except KeyboardInterrupt:
             print("Exiting program")
             break
+
+
+def put_stress_level(stress_levels):
+    stress_level = max(stress_levels)
+    stress_out = None
+    if stress_level  > 0 and stress_level < 100:
+        stress_out=  "Low stress"
+    elif stress_level > 100 and stress_level < 200:
+        stress_out =  "Normal but not low stress"
+    elif stress_level > 200 and stress_level < 300:
+        stress_out =  "Moderately high stress"
+    elif stress_level > 300 and stress_level < 400:
+        stress_out =  "Very High stress"
+    else:
+        stress_out = "EXTREMELY high stress"
+    
+    with open("../stress.txt", "w") as f:
+        f.write(stress_out)

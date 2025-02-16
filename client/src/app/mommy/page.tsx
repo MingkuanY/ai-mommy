@@ -213,7 +213,7 @@ function Action({ action, data, biometrics }: { action: any; data?: any[]; biome
 					{action.priority_cute}
 				</p>
 			</div>
-			<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1 flex-col gap-2">
+			<div className="w-40 h-64 bg-white rounded-lg flex items-center justify-center flex-1 flex-col gap-2 text-black">
 				{data && (
 					<ResponsiveContainer width="100%" height="100%">
 						<LineChart
@@ -254,9 +254,9 @@ function Action({ action, data, biometrics }: { action: any; data?: any[]; biome
 				)}
 				{biometrics && (
 					<div className="flex gap-2">
-						<Number number={Math.round(biometrics?.heart_rate)} />
-						<Number number={Math.round(biometrics?.blood_pressure_high) + "/" + Math.round(biometrics?.blood_pressure_low)} />
-						<Number number={Math.round(biometrics?.body_temperature)} />
+						<Number number={`💓 ${Math.round(biometrics?.heart_rate)}`} />
+						<Number number={`🩸 ${Math.round(biometrics?.blood_pressure_high)} / ${Math.round(biometrics?.blood_pressure_low)}`} />
+						<Number number={`🌡️ ${Math.round(biometrics?.body_temperature)}`} />
 					</div>
 				)}
 			</div>

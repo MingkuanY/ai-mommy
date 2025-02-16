@@ -33,10 +33,18 @@ load_dotenv()
 
 class MonitoringRule(BaseModel):
     """Structure for a custom monitoring rule"""
-    condition: str = Field(description="What to watch out for")
-    actions: List[str] = Field(description="Possible actions to take")
+    condition: str = Field(
+        "Conditions based on the current time, stress level, and screen content.")
+    actions: List[str] = Field(
+        "Actions to take based on the condition. Available Action Types: CONTROL, MUSIC, NOTIFICATION, BRIGHTNESS, COLOR")
     priority: int = Field(
-        description="Priority level of the rule (1 (highest) to 5 (lowest))")
+        "Priority level of the rule (1 (highest) to 5 (lowest))")
+    condition_cute: str = Field(
+        "Conditions field but briefly summarized in cute discord ekitten anime mommy language")
+    actions_cute: List[str] = Field(
+        "Actions field but briefly summarized in cute discord ekitten anime mommy language")
+    priority_cute: str = Field(
+        "A short priority level for the rule but in cute discord ekitten anime mommy language")
 
 
 def create_monitoring_rule(rule: MonitoringRule):
@@ -50,28 +58,10 @@ def create_monitoring_rule(rule: MonitoringRule):
     print("------------------------------------------")
 
     rules.append(rule.model_dump())
-    with open(RULES_FILE, "w") as file:
-        json.dump(rules, file, indent=4)
-
-
-def create_monitoring_rule_from_params(condition: str, actions: List[str], priority: int) -> str:
-    """
-    Creates a monitoring rule from the given parameters.
-    """
-
-    print("------------------------------------------")
-    print("Creating monitoring rule from params:")
-    print(f"Condition: {condition}")
-    print(f"Actions: {actions}")
-    print(f"Priority: {priority}")
-    print("------------------------------------------")
-
     try:
-        rule_obj = MonitoringRule(
-            condition=condition, actions=actions, priority=priority)
-        print("x")
-        create_monitoring_rule(rule_obj)
-        return "\n**Monitoring rule created successfully.**\n\n"
+        with open(RULES_FILE, "w") as file:
+            json.dump(rules, file, indent=4)
+            return "\n**Monitoring rule created successfully.**\n\n"
     except Exception as e:
         return f"\n**Error creating monitoring rule: {e}**\n\n"
 
@@ -141,6 +131,17 @@ def get_history():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/rules", methods=["GET"])
+def get_rules():
+    try:
+        rules = read_monitoring_rules()
+        return jsonify(rules)
+    except FileNotFoundError:
+        return jsonify({"error": "Rules file not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # --- Prompt Template Setup ---
 
 
@@ -156,11 +157,6 @@ system_prompt_template = PromptTemplate(
 
 # Define a Pydantic model for tool input.
 
-
-class MonitoringActionToolInput(BaseModel):
-    condition: str
-    actions: List[str]
-    priority: int
 
 # Define a custom tool that creates a monitoring rule from three parameters.
 
@@ -178,16 +174,10 @@ class MonitoringActionTool(BaseTool):
         - BRIGHTNESS: <brightness 1-100>
         - COLOR: <kelvin of screen temperature>"""
     )
-    input_model = MonitoringActionToolInput
 
-    def _run(self, tool_input: MonitoringActionToolInput) -> str:
-
-        print(tool_input)
-        # Parse the input using our Pydantic model.
-        input_obj = MonitoringActionToolInput.parse_obj(tool_input)
-        return create_monitoring_rule_from_params(
-            input_obj.condition, input_obj.actions, input_obj.priority
-        )
+    def _run(self, tool_input: MonitoringRule) -> str:
+        tool_input = MonitoringRule(**tool_input)
+        return create_monitoring_rule(tool_input)
 
     async def _arun(self, tool_input: Dict) -> str:
         raise NotImplementedError("Async mode not supported for this tool.")
@@ -253,6 +243,7 @@ def add_random_number():
             file.write(str(samples_to_read + 2))
 
         sleep(1)  # Add a number every second
+
 
     # samples_to_read = 100
     # with open("samples.txt", "r") as file:

@@ -21,3 +21,5 @@ while True:
   except KeyboardInterrupt:
     print("Exiting program")
     break
+  
+  #data.txt in server. time, reading

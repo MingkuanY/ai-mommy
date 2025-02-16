@@ -134,7 +134,6 @@ class ActionHistory:
     def get_recent_actions(self, count: int = 5) -> List[Dict]:
         return list(self.actions)[-count:]
 
-
 class StressMonitorAgent:
     def __init__(self, openai_api_key):
         self.llm = ChatOpenAI(
@@ -146,173 +145,38 @@ class StressMonitorAgent:
         self.parser = PydanticOutputParser(pydantic_object=MonitorResponse)
         self.state_history = StateHistory()
         self.action_history = ActionHistory()
-        self.monitoring_rules = [
-            # MonitoringRule(
-            #     condition="High stress and distracting websites like twitter",
-            #     actions=[
-            #         "CONTROL: close the distracting thing and suggest a better relaxing activity. ex take control of safari and change the page to something productive",
-            #         "NOTIFICATION: Suggest a more productive activity",
-            #         "MUSIC: play a relaxing genre on spotify"
-            #     ],
-            #     priority=1
-            # ),
-            MonitoringRule(
-                condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
-                actions=[
-                    "NOTIFICATION: Suggest educational activities if too much YouTube",
-                    "CONTROL: Control computer to educational content, if student is not complying within a reasonable amount of time"
-                ],
-                priority=1
-            ),
-            # MonitoringRule(
-            #     condition="Homework stress",
-            #     actions=[
-            #         "NOTIFICATION: Offer hints and problem-solving help",
-            #         "MUSIC: Play focus-enhancing music"
-            #     ],
-            #     priority=2
-            # )
-        ]
-        self.monitor_prompt = """
-        You are a helpful monitoring assistant. Based on the following information:
-        
-        Current Time: {time}
-        Current Stress Level: {stress_level}
-        Current App: {current_activity}
-        
-        Recent Activity History (last hour):
-        {recent_activities}
-        
-        Recent Actions Taken:
-        {recent_actions}
-        
-        MONITORING RULES TO FOLLOW:
-        {monitoring_rules}
-        
-        Your job is to check if any of the monitoring rules apply to the current situation and its history.
-        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
-        
-        {format_instructions}
-        
-        Available Action Types:
-        - CONTROL: <an apple script to do something on the computer>
-        - MUSIC: <jazz/lofi/pop>
-        - NOTIFICATION: <text of notification to user>
-        - BRIGHTNESS: <brightness 1-100>
-        - COLOR: <kelvin of screen temperature>
-        
-        You can recommend multiple actions if needed. For example:
-        {{
-            "actions": [
-                {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
-                {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
-                {{"action_type": "CONTROL", "value": "lofi", "reasoning": "tell application "Safari" to set URL of front document to "https://www.youtube.com/results?search_query=surfing+webcam"/'"}}
-            ],
-            "analysis": "User has been working intensely and needs music"
-        }}
-        
-        Respond with the appropriate action(s) based on the monitoring rules, or empty json if no actions are recommended:
-        """
-    
-    def format_monitoring_rules(self):
-        """Format monitoring rules for the prompt"""
-        rules_text = "MONITORING RULES:\n"
-        for i, rule in enumerate(self.monitoring_rules, 1):
-            rules_text += f"\nRule {i} (Priority {rule.priority}):\n"
-            rules_text += f"Watch for: {rule.condition}\n"
-            rules_text += "Possible actions:\n"
-            for action in rule.actions:
-                rules_text += f"- {action}\n"
-        return rules_text
-    
-    def add_monitoring_rule(self, condition: str, actions: List[str], priority: int = 3):
-        """Add a new monitoring rule"""
-        new_rule = MonitoringRule(
-            condition=condition,
-            actions=actions,
-            priority=priority
-        )
-        self.monitoring_rules.append(new_rule)
-    
-    def get_screenshot(self):
-        """Take a screenshot and save it temporarily"""
-        screenshot = pyautogui.screenshot()
-        screenshot.save("temp_screenshot.png")
-        return "temp_screenshot.png"
-    
-    def get_stress_level(self):
-        """Read stress level from stress.txt"""
+        self.rules_path = os.path.join("server", "rules.json")
+        self.monitoring_rules = self.load_monitoring_rules()
+
+    def load_monitoring_rules(self) -> List[MonitoringRule]:
+        """Load monitoring rules from rules.json file"""
         try:
-            with open("stress.txt", "r") as f:
-                return float(f.read().strip())
-        except:
-            return 0.0
-    
-    def get_current_activity(self):
-        """Analyze current activity using active window"""
-        if platform.system() == "Darwin":  # macOS
-            cmd = """osascript -e 'tell application "System Events"' -e 'set frontApp to name of first application process whose frontmost is true' -e 'end tell'"""
-            output = subprocess.check_output(cmd, shell=True).decode().strip()
-            return output
-        elif platform.system() == "Windows":
-            import win32gui
-            window = win32gui.GetForegroundWindow()
-            return win32gui.GetWindowText(window)
-        return "Unknown Application"
-    
-    def execute_action(self, action: MonitorAction):
-        """Execute the recommended action"""
-        print(f"Executing action: {action.action_type} with value: {action.value}")
-        print(f"Reasoning: {action.reasoning}")
-        
-        if action.action_type == ActionType.CONTROL:
-            self.execute_control(action.value)
-        elif action.action_type == ActionType.MUSIC:
-            self.execute_music(action.value)
-        elif action.action_type == ActionType.NOTIFICATION:
-            self.send_notification(action.value)
-        elif action.action_type == ActionType.BRIGHTNESS:
-            self.set_brightness(action.value)
-        elif action.action_type == ActionType.COLOR:
-            self.set_color_temperature(action.value)
-        
-        # Record the action in history
-        self.action_history.add_action(action)
-    
-    def execute_control(self, command: str):
-        """Execute computer control command"""
-        cmd = """osascript -e '{command}'""".format(command=command)
-        output = subprocess.check_output(cmd, shell=True).decode().strip()
-        # Add implementation using browser automation library
-        print(f"Control command: {command}")
-    
-    def execute_music(self, genre: str):
-        """Execute music genre change"""
-        # Add Spotify API implementation
-        print(f"Changing music to: {genre}")
-    
-    def send_notification(self, message: str):
-        """Send system notification"""
-        if platform.system() == "Darwin":  # macOS
-            os.system(f"""osascript -e 'display notification "{message}" with title "Stress Monitor"'""")
-        # Add Windows notification implementation
-    
-    def set_brightness(self, level: str):
-        """Set screen brightness"""
-        # Add OS-specific brightness control
-        print(f"Setting brightness to: {level}")
-    
-    def set_color_temperature(self, temperature: str):
-        """Set screen color temperature"""
-        # Add OS-specific color temperature control
-        print(f"Setting color temperature to: {temperature}")
+            with open(self.rules_path, 'r') as f:
+                rules_data = json.load(f)
+            
+            # Convert JSON data to MonitoringRule objects
+            rules = []
+            for rule in rules_data:
+                rules.append(MonitoringRule(
+                    condition=rule['condition'],
+                    actions=rule['actions'],
+                    priority=rule['priority']
+                ))
+            return rules
+        except Exception as e:
+            print(f"Error loading rules from {self.rules_path}: {e}")
+            # Return empty list if file cannot be loaded
+            return []
     
     def monitor_loop(self):
         """Main monitoring loop"""
         while True:
             try:
+                # Reload rules on each iteration
+                self.monitoring_rules = self.load_monitoring_rules()
+                
                 # Gather current state
-                current_time = datetime.now().strftime("%H:%M")
+                current_time = datetime.now().strftime("%H:%M:%S")
                 screenshot_path = self.get_screenshot()
                 stress_level = self.get_stress_level()
                 current_activity = self.get_current_activity()
@@ -331,25 +195,24 @@ class StressMonitorAgent:
                     monitoring_rules=self.format_monitoring_rules(),
                     format_instructions=self.parser.get_format_instructions()
                 )
-                # print(formatted_prompt)
 
                 messages = [
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": formatted_prompt
-                                },
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{base64_image}"
-                                    }
-                                },
-                            ]
-                        }
-                    ]
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": formatted_prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
+                            },
+                        ]
+                    }
+                ]
 
                 # Get AI recommendation with structured output
                 response = self.llm.invoke(messages)
@@ -370,7 +233,6 @@ class StressMonitorAgent:
             except Exception as e:
                 print(f"Error in monitoring loop: {e}")
                 time.sleep(5)
-
 
 def main():
     # Initialize the agent

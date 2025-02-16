@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from collections import deque
 import numpy as np
+import statistics
 
 # File path for logging
 file_path = "../server/history.txt"
@@ -13,8 +14,11 @@ data_window_max = deque(maxlen=5000)
 output_every = 500
 current_output_index = 0
 
+
+
 def put_stress_level(stress_levels):
-    stress_level = max(stress_levels)
+    stress_level = np.percentile(list(stress_levels), 75)
+    # stress_level = max(stress_levels)
     stress_out = None
     if stress_level  > 0 and stress_level < 100:
         stress_out=  "Low stress"

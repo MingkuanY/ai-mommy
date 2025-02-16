@@ -8,7 +8,9 @@ import numpy as np
 file_path = "../server/history.txt"
 
 # Initialize deque with max length of 1000 for rolling average
-data_window = deque(maxlen=1000)
+data_window = deque(maxlen=500)
+output_every = 500
+current_output_index = 0
 
 
 def calculate_rolling_average():
@@ -18,7 +20,7 @@ def calculate_rolling_average():
 
 
 try:
-    arduino = serial.Serial(port='/dev/cu.usbmodem11401',
+    arduino = serial.Serial(port='/dev/cu.usbmodem21401',
                             baudrate=115200, timeout=.1)
     time.sleep(2)  # Let connection settle
 except serial.SerialException as e:
@@ -43,9 +45,10 @@ with open(file_path, "a") as file:
                     timestamp = datetime.now().strftime("%s")
                     log_entry = f"{timestamp} {rolling_avg:.2f} {numeric_data}\n"
 
-                    print(log_entry, end="")  # Print to console
-                    file.write(log_entry)
-                    file.flush()  # Ensure data is written immediately
+                    if current_output_index == 0:
+                        print(log_entry, end="")  # Print to console
+                        file.write(log_entry)
+                        file.flush()  # Ensure data is written immediately
 
                 except ValueError as e:
                     print(f"Error converting data to float: {data}")
@@ -56,3 +59,6 @@ with open(file_path, "a") as file:
         except KeyboardInterrupt:
             print("Exiting program")
             break
+
+        current_output_index += 1
+        current_output_index %= output_every

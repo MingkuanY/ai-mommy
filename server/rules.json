@@ -12,5 +12,54 @@
             "Close Application 'YouTube'"
         ],
         "priority": 1
+    },
+    {
+        "condition": "User drinks a Capri Sun",
+        "actions": [
+            "Send a reminder to take a break and do something else"
+        ],
+        "priority": 1
+    },
+    {
+        "condition": "current time is between 8 PM and 6 AM",
+        "actions": [
+            "BRIGHTNESS: 50"
+        ],
+        "priority": 1
+    },
+    {
+        "condition": "current time is between 6 AM and 10 AM",
+        "actions": [
+            "MUSIC: pop"
+        ],
+        "priority": 1
+    },
+    {
+        "condition": "current time is between 10 AM and 12 PM",
+        "actions": [
+            "MUSIC: jazz"
+        ],
+        "priority": 2
+    },
+    {
+        "condition": "current time is between 12 PM and 3 PM",
+        "actions": [
+            "MUSIC: lofi"
+        ],
+        "priority": 3
+    },
+    {
+        "condition": "current time is between 3 PM and 6 PM",
+        "actions": [
+            "MUSIC: jazz"
+        ],
+        "priority": 4
+    },
+    {
+        "condition": "current time is between 6 PM and 10 PM",
+        "actions": [
+            "MUSIC: pop"
+        ],
+        "priority": 5
     }
 ]

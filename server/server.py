@@ -91,14 +91,35 @@ def read_monitoring_rules():
 
 
 def read_history():
-    # File formatted as "time stress" per line
+    print("rh")
     with open(HISTORY_FILE, "r") as file:
-        data = []
-        for line in file:
-            parts = line.strip().split()
-            if parts:
-                data.append([int(x) for x in parts])
-    return data
+        data = [[float(x) for x in line.strip().split()[:2]] for line in file]
+
+    recent_data = data[-10:]
+
+    # # print("Data: ", data)
+
+    # # Take the last 5000 points (or fewer if there aren't that many)
+    # recent_data = data[-5000:]
+
+    # # Downsample by selecting 10 evenly spaced points
+    # if len(recent_data) > 10:
+    #     indices = np.linspace(0, len(recent_data) - 1, 10, dtype=int)
+    #     recent_data = [recent_data[i] for i in indices]
+
+    # # print("Recent data:", recent_data)
+
+    return recent_data
+
+# def read_history():
+#     # File formatted as "time stress" per line
+#     with open(HISTORY_FILE, "r") as file:
+#         data = []
+#         for line in file:
+#             parts = line.strip().split()
+#             if parts:
+#                 data.append([int(x) for x in parts])
+#     return data
 
 # --- Legacy endpoints remain unchanged ---
 
@@ -110,6 +131,7 @@ def hello_world():
 
 @app.route("/history", methods=["GET"])
 def get_history():
+    print("Getting history rahhh")
     try:
         data = read_history()
         data = [{"time": time, "stress": stress} for time, stress in data]
@@ -148,6 +170,13 @@ class MonitoringActionTool(BaseTool):
     description: str = (
         "Creates a monitoring rule. Provide three parameters: "
         "condition (str), actions (list of str), and priority (int)."
+        """The conditions you can use are the current time, current stress level, and what is on the user's screen.
+        Available Action Types:
+        - CONTROL: <an apple script to do something on the computer>
+        - MUSIC: <jazz/lofi/pop>
+        - NOTIFICATION: <text of notification to user>
+        - BRIGHTNESS: <brightness 1-100>
+        - COLOR: <kelvin of screen temperature>"""
     )
     input_model = MonitoringActionToolInput
 
@@ -225,22 +254,6 @@ def add_random_number():
 
         sleep(1)  # Add a number every second
 
-
-def read_history():
-    # formatted as time stress with space in between
-    with open(HISTORY_FILE, "r") as file:
-        data = [list(map(int, line.strip().split()))[:2] for line in file]
-
-    # Take the last 5000 points (or fewer if there aren't that many)
-    recent_data = data[-5000:]
-
-    # Downsample by selecting 10 evenly spaced points
-    if len(recent_data) > 10:
-        indices = np.linspace(0, len(recent_data) - 1, 10, dtype=int)
-        recent_data = [recent_data[i] for i in indices]
-
-    return recent_data
-
     # samples_to_read = 100
     # with open("samples.txt", "r") as file:
     #     samples_to_read = int(file.read())
@@ -248,8 +261,6 @@ def read_history():
     # # data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
     # # return data
     # return samples_to_read
-
-
 if __name__ == "__main__":
     # Uncomment the following lines if you want to run the background thread.
     # thread = Thread(target=add_random_number)

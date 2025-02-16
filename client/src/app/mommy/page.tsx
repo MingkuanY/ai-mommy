@@ -120,7 +120,7 @@ const page = (props: Props) => {
 				</p>
 
 				{chatHistory.length > 0 && (
-					<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2">
+					<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2 max-h-[20rem] overflow-scroll">
 						{chatHistory.map((chat, index) => (
 							<div
 								key={index}

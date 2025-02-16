@@ -2,6 +2,7 @@ import numpy as np
 from collections import defaultdict
 import random
 import json
+import flask
 from threading import Thread
 from time import sleep
 # from stress import compute_stress_data_from_file
@@ -17,6 +18,16 @@ from langchain_community.tools import BaseTool
 from langchain.prompts import PromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
+from terra.base_client import Terra
+
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+_LOGGER = logging.getLogger("app")
+
+terra = Terra(api_key="t0PMr4YpxCVtYc0M7bYGSpBuRwujEPvp", dev_id="4actk-aimommy-testing-ntJJIlrzqJ", secret="1a1e999f0665aeda4cf5a92335bce2cf4450f3a34fbb7273")
+
 
 # --- File Paths ---
 HISTORY_FILE = "history.txt"  # Change this to the actual file path
@@ -252,6 +263,44 @@ def add_random_number():
     # # data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
     # # return data
     # return samples_to_read
+
+@app.route("/consumeTerraWebhook", methods=["POST"])
+def consume_terra_webhook() -> flask.Response:
+    body = request.get_json()
+    _LOGGER.info(
+        "Received webhook for user %s of type %s",
+        body.get("user", {}).get("user_id"),
+        body["type"])
+
+    avg_heart_rate = body["data"][0]["heart_data"]["heart_rate_data"]["summary"]["avg_hr_bpm"]
+
+    avg_systolic_bp = sum(bp["systolic_bp"] for bp in body["data"][0]["blood_pressure_data"]["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
+    avg_diastolic_bp = sum(bp["diastolic_bp"] for bp in body["data"][0]["blood_pressure_data"]["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
+
+    avg_body_temperature = sum(temp["temperature_celsius"] for temp in body["data"][0]["temperature_data"]["body_temperature_samples"]) / len(body["data"][0]["temperature_data"]["body_temperature_samples"])
+
+    timestamp = body["data"][0]["metadata"]["end_time"]
+
+    print("Heart rate: ", avg_heart_rate)
+    print("Blood pressure: ", avg_systolic_bp, avg_diastolic_bp)
+    print("Body temperature: ", avg_body_temperature)
+
+
+    with open("heart_rate.txt", "a") as file:
+        file.write(f"{avg_heart_rate}\n")
+
+    with open("blood_pressure.txt", "a") as file:
+        file.write(f"{avg_systolic_bp}, {avg_diastolic_bp}\n")
+
+    with open("body_temperature.txt", "a") as file:
+        file.write(f"{avg_body_temperature}\n")
+
+    verified = True #terra.check_terra_signature(request.get_data().decode("utf-8"), request.headers['terra-signature'])
+    if verified:
+      return flask.Response(status=200)
+    else:
+      return flask.Response(status=403)
+
 if __name__ == "__main__":
     # Uncomment the following lines if you want to run the background thread.
     # thread = Thread(target=add_random_number)

@@ -145,7 +145,6 @@ def read_history():
     #     for line in file:
     #         data.append([int(x) for x in line.strip().split()])
     data = compute_stress_data_from_file("sample_history.txt")
-    print(data[:10])
     return data
 
 

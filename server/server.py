@@ -23,6 +23,7 @@ import requests
 import threading
 import time
 import logging
+from predict_emotion import predict_emotion
 
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("app")
@@ -117,6 +118,27 @@ def read_history():
 
     return recent_data
 
+
+def gen_prediction():
+    try:
+        # Load the last 10 data points for each of the 4 features
+        # stress, heart_rate, blood_pressure, temperature
+        stressData = read_history()
+        biometrics = get_bio_data()
+        stress = [x[1] for x in stressData]
+        heart_rate = [x["rate"] for x in biometrics["heart_rate"]][-10:]
+        blood_pressure = [biometrics["blood_pressure_high"]] * 10
+        temperature = [biometrics["body_temperature"]] * 10
+
+        # Make a prediction
+        prediction = predict_emotion(
+            stress, heart_rate, blood_pressure, temperature)
+        return prediction
+    except Exception as e:
+        print("Error generating prediction:", e)
+        return str(e)
+
+
 # def read_history():
 #     # File formatted as "time stress" per line
 #     with open(HISTORY_FILE, "r") as file:
@@ -146,7 +168,8 @@ def get_history():
 
         complete_data = {
             "history": data,
-            "biometrics": biometrics
+            "biometrics": biometrics,
+            "prediction": gen_prediction()
         }
         return jsonify(complete_data)
     except FileNotFoundError:

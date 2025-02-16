@@ -21,6 +21,13 @@ interface ChatObject {
 	message: string;
 }
 
+const EMOTION_TO_MESSAGE = {
+	fear: "Are you feeling scared? I'm here for you.",
+	anger: "I'm sorry you're feeling angry. Let's talk about it.",
+	sadness: "I'm here for you. I know you're feeling sad.",
+	normal: "Seems like you're having a good day!",
+};
+
 const page = (props: Props) => {
 	const [chatInput, setChatInput] = useState<string>("");
 	const [chatHistory, setChatHistory] = useState<ChatObject[]>([]);
@@ -81,6 +88,9 @@ const page = (props: Props) => {
 
 	const [data, setData] = useState<any[]>();
 	const [biometrics, setBiometrics] = useState<any>();
+	const [prediction, setPrediction] = useState<
+		"normal" | "fear" | "anger" | "sadness"
+	>();
 	useEffect(() => {
 		function fetchData() {
 			// fetch data from localhost 5000
@@ -90,6 +100,7 @@ const page = (props: Props) => {
 					console.log(data);
 					setData(data.history);
 					setBiometrics(data.biometrics);
+					setPrediction(data.prediction);
 				});
 		}
 
@@ -142,7 +153,7 @@ const page = (props: Props) => {
 					<MotherAvatar />
 				</div>
 				<h1 className="text-4xl font-bold text-slate-700 text-center">
-					🤍 ai mama 🤍
+					🤍 motherly.ai 🤍
 				</h1>
 				<p className="text-gray-400 text-center italic">
 					Don't worry, mommy's here.
@@ -198,12 +209,16 @@ const page = (props: Props) => {
 			</p>
 
 			<div className="w-[50rem] bg-slate-100 rounded-lg p-4 flex flex-col gap-4">
+				<p className="text-slate-700 text-center italic font-semibold">
+					{/* @ts-ignore */}
+					{EMOTION_TO_MESSAGE[prediction]}
+				</p>
 				<div className="flex flex-row gap-4">
-					<p className=" text-slate-700 flex-1 text-center italic ">
-						Don't be stressed, sweetie!
+					<p className=" text-slate-400 flex-1 text-center italic ">
+						Your stress levels 🥺
 					</p>
-					<p className=" text-slate-700 flex-1 text-center italic ">
-						You make my heart beat 🥰
+					<p className=" text-slate-400 flex-1 text-center italic ">
+						Your heart rate 💓
 					</p>
 				</div>
 				<div className="w-full flex flex-row gap-4">

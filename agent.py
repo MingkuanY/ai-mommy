@@ -12,6 +12,7 @@ import subprocess
 import json
 from collections import deque
 import base64
+import subprocess
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -408,6 +409,15 @@ class StressMonitorAgent:
     
     def set_brightness(self, level: str):
         """Set screen brightness"""
+        if not 0.0 <= level <= 100:
+            raise ValueError("Brightness must be between 0.0 and 100")
+        level = float(level)/100
+        try:
+            subprocess.run(['brightness', str(level)], check=True)
+        except subprocess.CalledProcessError:
+            print("Error: Failed to set brightness")
+        except FileNotFoundError:
+            print("Error: 'brightness' command not found. Please install it first. brew install brightness")
         print(f"Setting brightness to: {level}")
     
     def set_color_temperature(self, temperature: str):

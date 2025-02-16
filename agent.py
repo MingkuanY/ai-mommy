@@ -25,7 +25,11 @@ class MonitoringRule(BaseModel):
 
 
 class ActionType(str, Enum):
-    CONTROL = "CONTROL"
+    SET_WEBSITE = "SET_WEBSITE"
+    CHANGE_TAB = "CHANGE_TAB"
+    CLOSE_TAB = "CLOSE_TAB"
+    ORDER_FOOD = "ORDER_FOOD"
+    TEXT_FRIEND = "TEXT_FRIEND"
     MUSIC = "MUSIC"
     NOTIFICATION = "NOTIFICATION"
     BRIGHTNESS = "BRIGHTNESS"
@@ -202,6 +206,7 @@ class StressMonitorAgent:
             "actions": [
                 {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
                 {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
+                {{"action_type": "CONTROL", "value": "lofi", "reasoning": "tell application "Safari" to set URL of front document to "https://www.youtube.com/results?search_query=surfing+webcam"/'"}}
             ],
             "analysis": "User has been working intensely and needs music"
         }}

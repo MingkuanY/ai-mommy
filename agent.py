@@ -26,10 +26,10 @@ class MonitoringRule(BaseModel):
 
 class ActionType(str, Enum):
     SET_WEBSITE = "SET_WEBSITE"
-    CHANGE_TAB = "CHANGE_TAB"
     CLOSE_TAB = "CLOSE_TAB"
     ORDER_FOOD = "ORDER_FOOD"
     TEXT_FRIEND = "TEXT_FRIEND"
+    MATCHA = "MATCHA"
     MUSIC = "MUSIC"
     NOTIFICATION = "NOTIFICATION"
     BRIGHTNESS = "BRIGHTNESS"
@@ -156,14 +156,14 @@ class StressMonitorAgent:
             #     ],
             #     priority=1
             # ),
-            MonitoringRule(
-                condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
-                actions=[
-                    "NOTIFICATION: Suggest educational activities if too much YouTube",
-                    "CONTROL: Control computer to educational content, if student is not complying within a reasonable amount of time"
-                ],
-                priority=1
-            ),
+            # MonitoringRule(
+            #     condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
+            #     actions=[
+            #         "NOTIFICATION: Suggest educational activities if too much YouTube",
+            #         "SET_WEBSITE: Switch to educational content, if student is not complying within a reasonable amount of time"
+            #     ],
+            #     priority=1
+            # ),
             # MonitoringRule(
             #     condition="Homework stress",
             #     actions=[
@@ -171,7 +171,39 @@ class StressMonitorAgent:
             #         "MUSIC: Play focus-enhancing music"
             #     ],
             #     priority=2
-            # )
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Suggest texting friends",
+            #         "TEXT_FRIEND: Text 727-457-4433 with message 'text me im stressed'"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on youtube",
+            #     actions=[
+            #         "NOTIFICATION: Suggest lowering brightness to decrease stimulation",
+            #         "BRIGHTNESS: lower brightness to 0.2"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Start a meditation session to de-stress",
+            #         "MATCHA"
+            #     ],
+            #     priority=2
+            # ),
+            # MonitoringRule(
+            #     condition="Going on instagram or facebook",
+            #     actions=[
+            #         "NOTIFICATION: Close this distracting tab",
+            #         "CLOSE_TAB"
+            #     ],
+            #     priority=2
+            # ),
         ]
         self.monitor_prompt = """
         You are a helpful monitoring assistant. Based on the following information:
@@ -195,7 +227,11 @@ class StressMonitorAgent:
         {format_instructions}
         
         Available Action Types:
-        - CONTROL: <an apple script to do something on the computer>
+        - SET_WEBSITE: <the url of the website to change the current tab to>
+        - CLOSE_TAB: <closes current tab>
+        - ORDER_FOOD: <dish to order and restaurant to order from>
+        - TEXT_FRIEND: <the phone number and message to text in the form: number|message>
+        - MATCHA: <opens the Ekkomi matcha website>
         - MUSIC: <jazz/lofi/pop>
         - NOTIFICATION: <text of notification to user>
         - BRIGHTNESS: <brightness 1-100>
@@ -206,7 +242,7 @@ class StressMonitorAgent:
             "actions": [
                 {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
                 {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
-                {{"action_type": "CONTROL", "value": "lofi", "reasoning": "tell application "Safari" to set URL of front document to "https://www.youtube.com/results?search_query=surfing+webcam"/'"}}
+                {{"action_type": "SET_WEBSITE", "value": "https://youtu.be/s9M30w085SY", "reasoning": "more educational content/'"}}
             ],
             "analysis": "User has been working intensely and needs music"
         }}
@@ -265,8 +301,16 @@ class StressMonitorAgent:
         print(f"Executing action: {action.action_type} with value: {action.value}")
         print(f"Reasoning: {action.reasoning}")
         
-        if action.action_type == ActionType.CONTROL:
-            self.execute_control(action.value)
+        if action.action_type == ActionType.SET_WEBSITE:
+            self.execute_set_website(action.value)
+        elif action.action_type == ActionType.CLOSE_TAB:
+            self.execute_close_tab(action.value)
+        elif action.action_type == ActionType.ORDER_FOOD:
+            self.execute_order_food(action.value)
+        elif action.action_type == ActionType.TEXT_FRIEND:
+            self.execute_text_friend(action.value)
+        elif action.action_type == ActionType.MATCHA:
+            self.execute_matcha(action.value)
         elif action.action_type == ActionType.MUSIC:
             self.execute_music(action.value)
         elif action.action_type == ActionType.NOTIFICATION:
@@ -279,12 +323,34 @@ class StressMonitorAgent:
         # Record the action in history
         self.action_history.add_action(action)
     
-    def execute_control(self, command: str):
+    def execute_set_website(self, url: str):
         """Execute computer control command"""
-        cmd = """osascript -e '{command}'""".format(command=command)
-        output = subprocess.check_output(cmd, shell=True).decode().strip()
-        # Add implementation using browser automation library
-        print(f"Control command: {command}")
+        if platform.system() == "Darwin":  # macOS
+            os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "{url}"\'""")
+        print(f"Set website to: {url}")
+    
+    def execute_close_tab(self, msg: str):
+        """Execute computer control command"""
+        if platform.system() == "Darwin":  # macOS
+            os.system(f"""osascript -e \'tell application "Safari" to tell front window to close current tab\'""")
+        print(f"Closes current tab: {msg}")
+    
+    def execute_order_food(self, dish_and_restaurant: str):
+        """Execute computer control command"""
+        print(f"Orders {dish_and_restaurant}")
+    
+    def execute_text_friend(self, number_and_message: str):
+        """Execute computer control command"""
+        if platform.system() == "Darwin":  # macOS
+            number, message = number_and_message.split('|')
+            os.system(f"""osascript applescripts/sendMessage.applescript {number} '{message}'""")
+        print(f"Send '{message}' to {number}")
+    
+    def execute_matcha(self, matcha: str):
+        """Opens matcha meditation website"""
+        if platform.system() == "Darwin":
+            os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "https://ekkomi.com/collections/shop-teas"\'""")
+        print(f"Opens matcha meditation session")
     
     def execute_music(self, genre: str):
         """Execute music genre change"""
@@ -299,7 +365,6 @@ class StressMonitorAgent:
     
     def set_brightness(self, level: str):
         """Set screen brightness"""
-        # Add OS-specific brightness control
         print(f"Setting brightness to: {level}")
     
     def set_color_temperature(self, temperature: str):

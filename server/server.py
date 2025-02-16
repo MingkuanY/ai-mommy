@@ -15,6 +15,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 load_dotenv()
 openai_client = OpenAI()
 
+increment = 0
+
 
 HISTORY_FILE = "history.txt"  # Change this to the actual file path
 
@@ -117,23 +119,13 @@ def add_random_number():
     while True:
         # print("Adding random number")
 
-        # Read the existing numbers from the file
-        data = read_history()
+        # read number from "samples.txt"
+        samples_to_read = 100
+        with open("samples.txt", "r") as file:
+            samples_to_read = int(file.read())
 
-        if len(data) > 20:
-            data.pop(0)
-
-        latest_time = data[-1][0]
-
-        # Add a new random number
-        new_time = latest_time + 1
-        new_stress = random.randint(0, 100)
-        data.append([new_time, new_stress])
-
-        # Write back the updated numbers
-        with open(HISTORY_FILE, "w") as file:
-            for time, stress in data:
-                file.write(f"{time} {stress}\n")
+        with open("samples.txt", "w") as file:
+            file.write(str(samples_to_read + 2))
 
         sleep(1)  # Add a number every second
 
@@ -144,15 +136,18 @@ def read_history():
     #     data = []
     #     for line in file:
     #         data.append([int(x) for x in line.strip().split()])
-    data = compute_stress_data_from_file("sample_history.txt")
-    print(data[:10])
+    samples_to_read = 100
+    with open("samples.txt", "r") as file:
+        samples_to_read = int(file.read())
+    print('samples_to_read', samples_to_read)
+    data = compute_stress_data_from_file("sample_history.txt", samples_to_read)
     return data
 
 
 if __name__ == "__main__":
     # Start a thread to add random numbers to the history file
-    # thread = Thread(target=add_random_number)
-    # thread.start()
+    thread = Thread(target=add_random_number)
+    thread.start()
 
     # Binds to all available network interfaces
     app.run(host="0.0.0.0", port=5000, debug=True)

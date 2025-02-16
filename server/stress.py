@@ -20,13 +20,13 @@ def read_emg_data(filename):
     Assumes the file uses whitespace as the delimiter, has a header row to skip, 
     and that the time column is in milliseconds.
     """
-    df = pd.read_csv(filename, delim_whitespace=True, skiprows=1, header=None)
+    df = pd.read_csv(filename, sep='\s+', skiprows=1, header=None)
     df.columns = ['time', 'ch1']
     # Convert time from milliseconds to seconds
     df['time'] = df['time'] / 1000.0
     return df
 
-def preprocess_data(df, fraction=0.2):
+def preprocess_data(df, fraction=1):
     """
     Preprocess the DataFrame by selecting only the first fraction of the data.
     
@@ -78,8 +78,8 @@ def compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000):
     
     # 3. Smooth the rectified signal using an exponential weighted moving average
     ch1_low_smooth = pd.Series(ch1_low_rect).ewm(span=smoothing_span, adjust=False).mean()
-    ch1_low_smooth.fillna(method='bfill', inplace=True)
-    ch1_low_smooth.fillna(method='ffill', inplace=True)
+    ch1_low_smooth.ffill(inplace=True)
+    ch1_low_smooth.bfill(inplace=True)
     
     # 4. Rescale the signal to a 0 - 10 range
     min_val = ch1_low_smooth.min()
@@ -92,14 +92,13 @@ def compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000):
     
     return list(zip(time_down, stress_down))
 
-def compute_stress_data_from_file(filename):
+def compute_stress_data_from_file(filename, num_samples=100):
     df = read_emg_data(filename)
-    df = preprocess_data(df, fraction=0.2)
     fs = compute_sampling_frequency(df)
     np_data = compute_stress_data(df, fs, downsample_factor=100, smoothing_span=3000)
     # turn into python list
     data = list(np_data)
-    return data
+    return data[:num_samples]
 
 def main():
     filename = "sample_history.txt"

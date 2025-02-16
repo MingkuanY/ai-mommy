@@ -143,23 +143,23 @@ class StressMonitorAgent:
         self.state_history = StateHistory()
         self.action_history = ActionHistory()
         self.monitoring_rules = [
-            MonitoringRule(
-                condition="High stress and distracting websites like twitter",
-                actions=[
-                    "CONTROL: close the distracting thing and suggest a better relaxing activity. ex take control of safari and change the page to something productive",
-                    "NOTIFICATION: Suggest a more productive activity",
-                    "MUSIC: play a relaxing genre on spotify"
-                ],
-                priority=1
-            ),
             # MonitoringRule(
-            #     condition="Monitor child's activity",
+            #     condition="High stress and distracting websites like twitter",
             #     actions=[
-            #         "NOTIFICATION: Suggest educational activities if too much YouTube",
-            #         "CONTROL: Redirect to educational content"
+            #         "CONTROL: close the distracting thing and suggest a better relaxing activity. ex take control of safari and change the page to something productive",
+            #         "NOTIFICATION: Suggest a more productive activity",
+            #         "MUSIC: play a relaxing genre on spotify"
             #     ],
             #     priority=1
             # ),
+            MonitoringRule(
+                condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
+                actions=[
+                    "NOTIFICATION: Suggest educational activities if too much YouTube",
+                    "CONTROL: Control computer to educational content, if student is not complying within a reasonable amount of time"
+                ],
+                priority=1
+            ),
             # MonitoringRule(
             #     condition="Homework stress",
             #     actions=[
@@ -185,8 +185,8 @@ class StressMonitorAgent:
         MONITORING RULES TO FOLLOW:
         {monitoring_rules}
         
-        Your job is to check if any of the monitoring rules apply to the current situation.
-        If they do, choose appropriate actions from the rule's action list.
+        Your job is to check if any of the monitoring rules apply to the current situation and its history.
+        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
         
         {format_instructions}
         
@@ -200,11 +200,10 @@ class StressMonitorAgent:
         You can recommend multiple actions if needed. For example:
         {{
             "actions": [
-                {{"action_type": "NOTIFICATION", "value": "Time for a break", "reasoning": "Been working for 2 hours"}},
+                {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
                 {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
-                {{"action_type": "CONTROL", "value": "lofi", "reasoning": "tell application "Safari" to set URL of front document to "https://www.youtube.com/results?search_query=surfing+webcam"/'"}}
             ],
-            "analysis": "User has been working intensely and needs a break"
+            "analysis": "User has been working intensely and needs music"
         }}
         
         Respond with the appropriate action(s) based on the monitoring rules, or empty json if no actions are recommended:

@@ -1,65 +1,42 @@
 [
     {
-        "condition": "YouTube active for more than 2 hours",
+        "condition": "If user has been on YouTube for more than 2 hours",
         "actions": [
-            "Send reminder: 'Nyaa~ You've been on YouTube for quite a while, darling. How about a little break? \ud83d\udc96'"
+            "NOTIFICATION: You've been on YouTube for quite a while, darling! \ud83d\udc96 Maybe it's time for a little break? \ud83c\udf38"
         ],
-        "priority": 2
+        "priority": 1,
+        "condition_cute": "If my dear user has been lost in the YouTube world for more than 2 hours \ud83c\udf0d\ud83c\udfa5",
+        "actions_cute": [
+            "NOTIFICATION: Oh my, you've been on YouTube for quite a while, darling! \ud83d\udc96 Maybe it's time for a little break? Let's stretch those legs and rest those eyes, okay? \ud83c\udf38\ud83d\udc40"
+        ],
+        "priority_cute": "Super duper important! \ud83c\udf1f"
     },
     {
-        "condition": "Time > 16:30 AND Application = 'YouTube'",
+        "condition": "If the user's screen displays TikTok for more than 2 hours straight",
         "actions": [
-            "Close Application 'YouTube'"
-        ],
-        "priority": 1
-    },
-    {
-        "condition": "User drinks a Capri Sun",
-        "actions": [
-            "Send a reminder to take a break and do something else"
-        ],
-        "priority": 1
-    },
-    {
-        "condition": "current time is between 8 PM and 6 AM",
-        "actions": [
-            "BRIGHTNESS: 50"
-        ],
-        "priority": 1
-    },
-    {
-        "condition": "current time is between 6 AM and 10 AM",
-        "actions": [
-            "MUSIC: pop"
-        ],
-        "priority": 1
-    },
-    {
-        "condition": "current time is between 10 AM and 12 PM",
-        "actions": [
-            "MUSIC: jazz"
-        ],
-        "priority": 2
-    },
-    {
-        "condition": "current time is between 12 PM and 3 PM",
-        "actions": [
+            "NOTIFICATION: Oh dear, you've been on TikTok for quite a while now. How about we take a little break, sweetie? \ud83d\udc96",
             "MUSIC: lofi"
         ],
-        "priority": 3
+        "priority": 1,
+        "condition_cute": "If my little darling has been scrolling through TikTok for over 2 hours non-stop \ud83d\ude40",
+        "actions_cute": [
+            "NOTIFICATION: Oh my, you've been on TikTok for quite a while now, haven't you, sweetie? Let's take a little break and relax, okay? \ud83d\udc96",
+            "MUSIC: Some soothing lofi tunes to help my darling relax \ud83c\udfb5\ud83d\udc95"
+        ],
+        "priority_cute": "Super duper high! Because taking care of you is my top priority, darling! \ud83d\udc96\u2728"
     },
     {
-        "condition": "current time is between 3 PM and 6 PM",
+        "condition": "If the user's screen displays Minecraft for more than 3 hours straight",
         "actions": [
-            "MUSIC: jazz"
+            "NOTIFICATION: Oh dear, you've been mining and crafting for quite a while now. How about we take a little break, darling? \ud83d\udc96",
+            "BRIGHTNESS: 70"
         ],
-        "priority": 4
-    },
-    {
-        "condition": "current time is between 6 PM and 10 PM",
-        "actions": [
-            "MUSIC: pop"
+        "priority": 1,
+        "condition_cute": "If my little gamer has been playing Minecraft for more than 3 hours straight \ud83c\udfae\ud83d\udc95",
+        "actions_cute": [
+            "NOTIFICATION: Oh dear, you've been mining and crafting for quite a while now. How about we take a little break, darling? \ud83d\udc96",
+            "BRIGHTNESS: Let's dim the lights a bit to 70%, okay? \ud83c\udf19\ud83d\udc96"
         ],
-        "priority": 5
+        "priority_cute": "High priority, because your well-being is always a top priority, darling! \ud83d\udc95"
     }
 ]

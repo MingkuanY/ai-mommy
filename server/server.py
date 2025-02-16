@@ -328,7 +328,13 @@ def consume_terra_webhook() -> flask.Response:
 
 def generate_fake_data():
     """Simulate sensor data and send to /consumeTerraWebhook every 30 seconds."""
+
+    stress_levels = [ "Low stress", "Normal but not low stress", "Moderately high stress", "Very High stress", "EXTREMELY high stress"]
+
     while True:
+        with open("../stress.txt", "r") as file:
+            stress = file.readlines()[-1].strip()
+            stress_level = stress_levels.index(stress)
         fake_data = {
             "user": {"user_id": "test_user"},
             "type": "health_data",
@@ -336,18 +342,18 @@ def generate_fake_data():
                 "heart_data": {
                     "heart_rate_data": {
                         "summary": {
-                            "avg_hr_bpm": random.randint(70, 120)  # Random heart rate
+                            "avg_hr_bpm": random.randint(70 + stress_level * 10, 120 + stress_level * 10)  # Random heart rate
                         }
                     }
                 },
                 "blood_pressure_data": {
                     "blood_pressure_samples": [
-                        {"systolic_bp": random.randint(110, 120), "diastolic_bp": random.randint(70, 75)}
+                        {"systolic_bp": random.randint(100 + stress_level * 5, 130 + stress_level * 5), "diastolic_bp": random.randint(60 + stress_level * 5, 80 + stress_level * 5)}
                     ]
                 },
                 "temperature_data": {
                     "body_temperature_samples": [
-                        {"temperature_celsius": round(random.uniform(37.0, 38.0), 1)}  # Normal body temp range
+                        {"temperature_celsius": round(random.uniform(36.0 + stress_level * 0.1, 37.0 + stress_level * 0.1), 1)}  # Normal body temp range
                     ]
                 },
                 "metadata": {
@@ -361,12 +367,14 @@ def generate_fake_data():
             response = requests.post("http://localhost:5000/consumeTerraWebhook", json=fake_data)
             if response.status_code == 200:
                 print("✅ Fake data sent successfully!")
+                print("Stress: ", stress_level)
+
             else:
                 print(f"❌ Failed to send data: {response.status_code} - {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"🚨 Error sending fake data: {e}")
 
-        time.sleep(10)  # Wait 30 seconds before sending the next request
+        time.sleep(3)  # Wait 30 seconds before sending the next request
 
 # Start the background thread
 threading.Thread(target=generate_fake_data, daemon=True).start()

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pyautogui
 import os
 from langchain.chat_models import ChatOpenAI
-from langchain.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from langchain.output_parsers import PydanticOutputParser
 from typing import Optional, Literal, List, Dict
 from enum import Enum
@@ -11,6 +11,18 @@ import platform
 import subprocess
 import json
 from collections import deque
+import base64
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+class MonitoringRule(BaseModel):
+    """Structure for a custom monitoring rule"""
+    condition: str = Field(description="What to watch out for")
+    actions: List[str] = Field(description="Possible actions to take")
+    priority: int = Field(description="Priority level of the rule (1-5)")
+
 
 class ActionType(str, Enum):
     CONTROL = "CONTROL"
@@ -19,10 +31,12 @@ class ActionType(str, Enum):
     BRIGHTNESS = "BRIGHTNESS"
     COLOR = "COLOR"
 
+
 class MusicGenre(str, Enum):
     LOFI = "lofi"
     JAZZ = "jazz"
     POP = "pop"
+
 
 class MonitorAction(BaseModel):
     """Single monitoring action"""
@@ -30,10 +44,12 @@ class MonitorAction(BaseModel):
     value: Optional[str] = Field(None, description="The value for the action")
     reasoning: str = Field(description="Explanation for why this action was chosen")
 
+
 class MonitorResponse(BaseModel):
     """Complete monitoring response with multiple possible actions"""
     actions: List[MonitorAction] = Field(description="List of actions to take")
     analysis: str = Field(description="Overall analysis of the situation")
+
 
 class UserState(BaseModel):
     """Track user's current state and activity"""
@@ -42,6 +58,7 @@ class UserState(BaseModel):
     start_time: datetime
     end_time: Optional[datetime] = None
     duration: Optional[int] = None  # in minutes
+
 
 class StateHistory:
     """Manage user state history"""
@@ -96,6 +113,7 @@ class StateHistory:
             for state in recent_states
         ]
 
+
 class ActionHistory:
     """Track history of actions taken"""
     def __init__(self, max_size=50):
@@ -112,10 +130,11 @@ class ActionHistory:
     def get_recent_actions(self, count: int = 5) -> List[Dict]:
         return list(self.actions)[-count:]
 
+
 class StressMonitorAgent:
     def __init__(self, openai_api_key):
         self.llm = ChatOpenAI(
-            model_name="gpt-4",
+            model_name="gpt-4o-mini",
             temperature=0.7,
             openai_api_key=openai_api_key
         )
@@ -123,13 +142,39 @@ class StressMonitorAgent:
         self.parser = PydanticOutputParser(pydantic_object=MonitorResponse)
         self.state_history = StateHistory()
         self.action_history = ActionHistory()
-        
+        self.monitoring_rules = [
+            # MonitoringRule(
+            #     condition="High stress and distracting websites like twitter",
+            #     actions=[
+            #         "CONTROL: close the distracting thing and suggest a better relaxing activity. ex take control of safari and change the page to something productive",
+            #         "NOTIFICATION: Suggest a more productive activity",
+            #         "MUSIC: play a relaxing genre on spotify"
+            #     ],
+            #     priority=1
+            # ),
+            MonitoringRule(
+                condition="Monitor child's activity, allowing some amount of fun time but keeping them focused on their homework if they spend excessive time not studying",
+                actions=[
+                    "NOTIFICATION: Suggest educational activities if too much YouTube",
+                    "CONTROL: Control computer to educational content, if student is not complying within a reasonable amount of time"
+                ],
+                priority=1
+            ),
+            # MonitoringRule(
+            #     condition="Homework stress",
+            #     actions=[
+            #         "NOTIFICATION: Offer hints and problem-solving help",
+            #         "MUSIC: Play focus-enhancing music"
+            #     ],
+            #     priority=2
+            # )
+        ]
         self.monitor_prompt = """
         You are a helpful monitoring assistant. Based on the following information:
         
         Current Time: {time}
         Current Stress Level: {stress_level}
-        Current Activity: {current_activity}
+        Current App: {current_activity}
         
         Recent Activity History (last hour):
         {recent_activities}
@@ -137,33 +182,53 @@ class StressMonitorAgent:
         Recent Actions Taken:
         {recent_actions}
         
-        Determine what interventions are needed. Consider:
-        1. The time of day and appropriate activities
-        2. The stress level and potential need for breaks
-        3. The current activity and its appropriateness
-        4. The history of recent activities and actions taken
+        MONITORING RULES TO FOLLOW:
+        {monitoring_rules}
+        
+        Your job is to check if any of the monitoring rules apply to the current situation and its history.
+        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
         
         {format_instructions}
         
-        Available Actions:
-        - CONTROL: Use for computer control actions (e.g., closing tabs, switching applications)
-        - MUSIC: Choose from genres [lofi, jazz, pop]
-        - NOTIFICATION: Send user messages
-        - BRIGHTNESS: Set screen brightness (1-100)
-        - COLOR: Set screen color temperature in Kelvin
+        Available Action Types:
+        - CONTROL: <an apple script to do something on the computer>
+        - MUSIC: <jazz/lofi/pop>
+        - NOTIFICATION: <text of notification to user>
+        - BRIGHTNESS: <brightness 1-100>
+        - COLOR: <kelvin of screen temperature>
         
         You can recommend multiple actions if needed. For example:
         {{
             "actions": [
-                {{"action_type": "NOTIFICATION", "value": "Time for a break", "reasoning": "Been working for 2 hours"}},
-                {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}}
+                {{"action_type": "NOTIFICATION", "value": "Time for nice music", "reasoning": "Been working for 2 hours"}},
+                {{"action_type": "MUSIC", "value": "lofi", "reasoning": "Help wind down"}},
             ],
-            "analysis": "User has been working intensely and needs a break"
+            "analysis": "User has been working intensely and needs music"
         }}
         
-        Respond with the appropriate action(s):
+        Respond with the appropriate action(s) based on the monitoring rules, or empty json if no actions are recommended:
         """
-        
+    
+    def format_monitoring_rules(self):
+        """Format monitoring rules for the prompt"""
+        rules_text = "MONITORING RULES:\n"
+        for i, rule in enumerate(self.monitoring_rules, 1):
+            rules_text += f"\nRule {i} (Priority {rule.priority}):\n"
+            rules_text += f"Watch for: {rule.condition}\n"
+            rules_text += "Possible actions:\n"
+            for action in rule.actions:
+                rules_text += f"- {action}\n"
+        return rules_text
+    
+    def add_monitoring_rule(self, condition: str, actions: List[str], priority: int = 3):
+        """Add a new monitoring rule"""
+        new_rule = MonitoringRule(
+            condition=condition,
+            actions=actions,
+            priority=priority
+        )
+        self.monitoring_rules.append(new_rule)
+    
     def get_screenshot(self):
         """Take a screenshot and save it temporarily"""
         screenshot = pyautogui.screenshot()
@@ -178,7 +243,7 @@ class StressMonitorAgent:
         except:
             return 0.0
     
-    def get_current_activity(self, screenshot_path):
+    def get_current_activity(self):
         """Analyze current activity using active window"""
         if platform.system() == "Darwin":  # macOS
             cmd = """osascript -e 'tell application "System Events"' -e 'set frontApp to name of first application process whose frontmost is true' -e 'end tell'"""
@@ -211,7 +276,9 @@ class StressMonitorAgent:
     
     def execute_control(self, command: str):
         """Execute computer control command"""
-        # Add implementation using browser-use library
+        cmd = """osascript -e '{command}'""".format(command=command)
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        # Add implementation using browser automation library
         print(f"Control command: {command}")
     
     def execute_music(self, genre: str):
@@ -243,7 +310,8 @@ class StressMonitorAgent:
                 current_time = datetime.now().strftime("%H:%M")
                 screenshot_path = self.get_screenshot()
                 stress_level = self.get_stress_level()
-                current_activity = self.get_current_activity(screenshot_path)
+                current_activity = self.get_current_activity()
+                base64_image = encode_image(screenshot_path)
                 
                 # Update state history
                 self.state_history.update_state(current_activity, stress_level)
@@ -255,12 +323,32 @@ class StressMonitorAgent:
                     current_activity=current_activity,
                     recent_activities=json.dumps(self.state_history.get_recent_activities(), indent=2),
                     recent_actions=json.dumps(self.action_history.get_recent_actions(), indent=2),
+                    monitoring_rules=self.format_monitoring_rules(),
                     format_instructions=self.parser.get_format_instructions()
                 )
-                
+                # print(formatted_prompt)
+
+                messages = [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": formatted_prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                    }
+                                },
+                            ]
+                        }
+                    ]
+
                 # Get AI recommendation with structured output
-                response = self.llm.predict(formatted_prompt)
-                monitor_response = self.parser.parse(response)
+                response = self.llm.invoke(messages)
+                monitor_response = self.parser.parse(response.content)
                 
                 # Execute all recommended actions
                 print(f"Analysis: {monitor_response.analysis}")
@@ -272,11 +360,12 @@ class StressMonitorAgent:
                     os.remove(screenshot_path)
                 
                 # Wait for next check
-                time.sleep(3)
+                time.sleep(5)
                 
             except Exception as e:
                 print(f"Error in monitoring loop: {e}")
-                time.sleep(3)
+                time.sleep(5)
+
 
 def main():
     # Initialize the agent
@@ -289,6 +378,7 @@ def main():
     # Start monitoring
     print("Starting stress monitoring...")
     agent.monitor_loop()
+
 
 if __name__ == "__main__":
     main()

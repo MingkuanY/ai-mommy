@@ -12,8 +12,68 @@ import {
 } from "recharts";
 
 interface Props {}
+interface ChatObject {
+	sender: "user" | "mommy";
+	message: string;
+}
 
 const page = (props: Props) => {
+	const [chatInput, setChatInput] = useState<string>("");
+	const [chatHistory, setChatHistory] = useState<ChatObject[]>([]);
+
+	async function sendChat() {
+		// fetch data from localhost 5000
+
+		// add the user's chat to the chat history
+
+		let newChatHistory: ChatObject[] = [
+			...chatHistory,
+			{ sender: "user", message: chatInput },
+		];
+
+		setChatHistory(newChatHistory);
+
+		const response = await fetch("http://127.0.0.1:5000/ask", {
+			body: JSON.stringify({ history: newChatHistory }),
+			headers: {
+				"Content-Type": "application/json",
+			},
+			method: "POST",
+		});
+		const reader = response.body?.getReader();
+
+		if (!reader) return;
+
+		let done = false;
+		let data = "";
+		while (!done) {
+			const { value, done: done_ } = await reader.read();
+			done = done_;
+			data += new TextDecoder().decode(value);
+
+			// update the last chat
+			// if the last chat object is from the user
+			// then add a new chat object with the response from the server
+			// else update the last chat object with the response from the server
+			setChatHistory((oldChatHistory) => {
+				if (oldChatHistory.length > 0) {
+					if (oldChatHistory[oldChatHistory.length - 1].sender === "user") {
+						return [
+							...oldChatHistory.slice(0, -1),
+							{ sender: "user", message: chatInput },
+							{ sender: "mommy", message: data },
+						];
+					} else {
+						const newChatHistory = oldChatHistory.slice(0, -1);
+						return [...newChatHistory, { sender: "mommy", message: data }];
+					}
+				} else {
+					return [{ sender: "mommy", message: data }];
+				}
+			});
+		}
+	}
+
 	const [data, setData] = useState<any[]>();
 	useEffect(() => {
 		function fetchData() {
@@ -49,8 +109,49 @@ const page = (props: Props) => {
 					"Mmm~ how can I help you, baby?~" 💕 gentle giggle
 				</p>
 
+				{chatHistory.length > 0 && (
+					<>
+						<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2">
+							{chatHistory.map((chat, index) => (
+								<div
+									key={index}
+									className={
+										chat.sender === "user"
+											? "flex-row w-full flex pl-4"
+											: "flex-row w-full flex pr-4"
+									}
+								>
+									{/* spacer */}
+									<div className="flex-1"></div>
+									<div
+										key={index}
+										className={`p-2 ${
+											chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
+										} rounded-lg`}
+									>
+										<p className="text-black">{chat.message}</p>
+									</div>
+								</div>
+							))}
+						</div>
+					</>
+				)}
 				<div className="w-[40rem] bg-pink-100 rounded-lg p-4">
 					<input
+						type="text"
+						value={chatInput}
+						onChange={(e) => setChatInput(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								sendChat();
+								setChatInput("");
+
+								// setChatHistory([
+								// 	...chatHistory,
+								// 	{ sender: "user", message: chatInput },
+								// ]);
+							}
+						}}
 						className="w-full bg-transparent outline-none text-black"
 						placeholder="type something babyyy..."
 					></input>

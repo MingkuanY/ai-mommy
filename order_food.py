@@ -26,6 +26,6 @@ response = client.act(
         EditTool(instance),
     ],
     system=UBUNTU_SYSTEM_PROMPT,
-    prompt="Go to doordash and order me this: a pizza from dominoes",
+    prompt="Go to doordash, login to my account (bob@gmail.com, pass: urmom9), and order me this: a pizza from dominoes",
     on_step=lambda step: print(step.text),
 )

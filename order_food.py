@@ -46,10 +46,10 @@ prompt_text = (
     "Select today's date for the delivery and the earliest time available"
     f"order the following items: {items}"
     "Click on continue checkout"
-    "Fill in with my information: Sophia Sharif, sophiasharif@ucla.edu, 650-555-1234"
-    "select I'll sign up later"
-    "select leave it at the door"
-    "click pay with cash upon delivery"
+    # "Fill in with my information: Sophia Sharif, sophiasharif@ucla.edu, 650-555-1234"
+    # "select I'll sign up later"
+    # "select leave it at the door"
+    # "click pay with cash upon delivery"
 )
 
 def attempt_order(model):

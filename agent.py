@@ -363,6 +363,7 @@ class StressMonitorAgent:
     
     def execute_order_food(self, dish_and_restaurant: str):
         """Execute computer control command"""
+        process = subprocess.Popen(["python3", "order_food.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print(f"Orders {dish_and_restaurant}")
     
     def execute_text_friend(self, number_and_message: str):
@@ -398,6 +399,19 @@ class StressMonitorAgent:
     
     def execute_music(self, genre: str):
         """Execute music genre change"""
+        genre_to_url= {
+            "jazz": "https://www.youtube.com/watch?v=au0AHLKkkVc",
+            "lofi": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+            "pop": "https://www.youtube.com/watch?v=QIHMCAkDH9E"
+        }
+        output = genre_to_url.get(genre)
+        
+        os.system(f"""osascript -e 'tell application "Safari"
+                tell front window
+                    make new tab with properties {{URL:"{output}"}}
+                    set current tab to tab -1
+                end tell
+            end tell'""")
         # Add Spotify API implementation
         print(f"Changing music to: {genre}")
     

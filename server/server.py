@@ -189,7 +189,7 @@ class MonitoringActionTool(BaseTool):
     description: str = (
         "Creates a monitoring rule. Provide three parameters: "
         "condition (str), actions (list of str), and priority (int)."
-        """The conditions you can use are the current time, current stress level, and what is on the user's screen.
+        """The conditions you can use are the current time, current stress level, and what is on the user's screen. you can also mention multistep conditions or conditions over time to describe when and why actions are to be triggered in this field.
         Available Action Types:
         - SET_WEBSITE: <the url of the website to change the current tab to>
         - CLOSE_TAB: <closes current tab>

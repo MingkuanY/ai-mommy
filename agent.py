@@ -13,6 +13,7 @@ import json
 from collections import deque
 import base64
 import subprocess
+import re
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -153,6 +154,11 @@ class StressMonitorAgent:
     def load_monitoring_rules(self) -> List[MonitoringRule]:
         """Load monitoring rules from rules.json file"""
         rules = ""
+
+        if os.path.getsize(self.rules_path) == 0:
+            print(f"Warning: {self.rules_path} is empty. No rules loaded.")
+            return []
+
         try:
             with open(self.rules_path, 'r') as f:
                 rules_data = json.load(f)
@@ -248,7 +254,7 @@ class StressMonitorAgent:
         {monitoring_rules}
         
         Your job is to check if any of the monitoring rules apply to the current situation and its history.
-        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
+        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action. Only take an action if the monitoring rules explicitly align with what the user is currently doing.
         
         {format_instructions}
         
@@ -354,6 +360,8 @@ class StressMonitorAgent:
     def execute_set_website(self, url: str):
         """Execute computer control command"""
         if platform.system() == "Darwin":  # macOS
+            if not url.startswith("http://") and not url.startswith("https://"):
+                url = "https://www." + url
             os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "{url}"\'""")
         print(f"Set website to: {url}")
     
@@ -420,7 +428,7 @@ class StressMonitorAgent:
     
     def send_notification(self, message: str):
         """Send system notification"""
-        message = ''.join([e for e in message if e in "1234567890abcdefghijklmnopqrstuvxyz .,"])
+        message = re.sub(r"[^A-Za-z0-9 ,.]", "", message)
         if platform.system() == "Darwin":  # macOS
             os.system(f"""osascript -e 'display notification "{message}" with title "Stress Monitor"'""")
         # Add Windows notification implementation

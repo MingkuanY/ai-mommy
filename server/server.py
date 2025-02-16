@@ -27,7 +27,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 _LOGGER = logging.getLogger("app")
 
-terra = Terra(api_key="t0PMr4YpxCVtYc0M7bYGSpBuRwujEPvp", dev_id="4actk-aimommy-testing-ntJJIlrzqJ", secret="1a1e999f0665aeda4cf5a92335bce2cf4450f3a34fbb7273")
+terra = Terra(api_key="t0PMr4YpxCVtYc0M7bYGSpBuRwujEPvp", dev_id="4actk-aimommy-testing-ntJJIlrzqJ",
+              secret="1a1e999f0665aeda4cf5a92335bce2cf4450f3a34fbb7273")
 
 
 # --- File Paths ---
@@ -46,7 +47,6 @@ load_dotenv()
 # --- Monitoring Rule Definitions ---
 
 
-
 class MonitoringRule(BaseModel):
     """Structure for a custom monitoring rule"""
     condition: str = Field(
@@ -56,11 +56,11 @@ class MonitoringRule(BaseModel):
     priority: int = Field(
         "Priority level of the rule (1 (highest) to 5 (lowest))")
     condition_cute: str = Field(
-        "Conditions field but briefly summarized in cute discord ekitten anime mommy language")
+        "Conditions field but briefly summarized in southern mothernly language")
     actions_cute: List[str] = Field(
-        "Actions field but briefly summarized in cute discord ekitten anime mommy language")
+        "Actions field but briefly summarized in southern mothernly language")
     priority_cute: str = Field(
-        "A short priority level for the rule but in cute discord ekitten anime mommy language")
+        "A short priority level for the rule but in southern mothernly language")
 
 
 def create_monitoring_rule(rule: MonitoringRule):
@@ -172,7 +172,7 @@ system_prompt_template = PromptTemplate(
     input_variables=[],
     template=(
         "You are a helpful assistant that helps users set up actions on their computer. When users tell you about their problems or needs or ask for advice, you should suggest some actions you could set up to monitor and help them. Discuss this new monitoring rule with the user and ask them to confirm it. Once they do, you can create it using the 'create_monitoring_rule' tool. Describe the rule you will create with bullet points and use markdown if needed, don't show the non-cute fields to the user."
-        "You should talk like an anime mommy, always caring and helpful. You should also be a bit playful and cute, but also very responsible and reliable. Talk like a discord ekitten anime girl, use emojis and cute language."
+        "You should talk like an southern mother, always caring and helpful. You should also be a bit playful and cute, but also very responsible and reliable. Talk stylized, use emojis and cute language."
     )
 )
 
@@ -189,7 +189,7 @@ class MonitoringActionTool(BaseTool):
     description: str = (
         "Creates a monitoring rule. Provide three parameters: "
         "condition (str), actions (list of str), and priority (int)."
-        """The conditions you can use are the current time, current stress level, and what is on the user's screen.
+        """The conditions you can use are the current time, current stress level, and what is on the user's screen. you can also mention multistep conditions or conditions over time to describe when and why actions are to be triggered in this field.
         Available Action Types:
         - SET_WEBSITE: <the url of the website to change the current tab to>
         - CLOSE_TAB: <closes current tab>
@@ -272,7 +272,6 @@ def add_random_number():
 
         sleep(1)  # Add a number every second
 
-
     # samples_to_read = 100
     # with open("samples.txt", "r") as file:
     #     samples_to_read = int(file.read())
@@ -281,12 +280,16 @@ def add_random_number():
     # # return data
     # return samples_to_read
 
+
 def get_bio_data():
     with open(HEART_RATE_FILE, "r") as file:
-        heart_rate = float(file.readlines()[-1].strip())
+        heart_rate = [float(x.strip()) for x in file.readlines()[-20:]]
+        heart_rate = [{"time": i, "rate": rate}
+                      for i, rate in enumerate(heart_rate)]
 
     with open(BLOOD_PRESSURE_FILE, "r") as file:
-        blood_pressure = [float(x) for x in file.readlines()[-1].strip().split(",")]
+        blood_pressure = [float(x)
+                          for x in file.readlines()[-1].strip().split(",")]
 
     with open(BODY_TEMPERATURE_FILE, "r") as file:
         body_temperature = float(file.readlines()[-1].strip())
@@ -311,10 +314,13 @@ def consume_terra_webhook() -> flask.Response:
 
     avg_heart_rate = body["data"][0]["heart_data"]["heart_rate_data"]["summary"]["avg_hr_bpm"]
 
-    avg_systolic_bp = sum(bp["systolic_bp"] for bp in body["data"][0]["blood_pressure_data"]["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
-    avg_diastolic_bp = sum(bp["diastolic_bp"] for bp in body["data"][0]["blood_pressure_data"]["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
+    avg_systolic_bp = sum(bp["systolic_bp"] for bp in body["data"][0]["blood_pressure_data"]
+                          ["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
+    avg_diastolic_bp = sum(bp["diastolic_bp"] for bp in body["data"][0]["blood_pressure_data"]
+                           ["blood_pressure_samples"]) / len(body["data"][0]["blood_pressure_data"]["blood_pressure_samples"])
 
-    avg_body_temperature = sum(temp["temperature_celsius"] for temp in body["data"][0]["temperature_data"]["body_temperature_samples"]) / len(body["data"][0]["temperature_data"]["body_temperature_samples"])
+    avg_body_temperature = sum(temp["temperature_celsius"] for temp in body["data"][0]["temperature_data"]
+                               ["body_temperature_samples"]) / len(body["data"][0]["temperature_data"]["body_temperature_samples"])
 
     with open("heart_rate.txt", "a") as file:
         file.write(f"{avg_heart_rate}\n")
@@ -325,16 +331,19 @@ def consume_terra_webhook() -> flask.Response:
     with open("body_temperature.txt", "a") as file:
         file.write(f"{avg_body_temperature}\n")
 
-    verified = True #terra.check_terra_signature(request.get_data().decode("utf-8"), request.headers['terra-signature'])
+    # terra.check_terra_signature(request.get_data().decode("utf-8"), request.headers['terra-signature'])
+    verified = True
     if verified:
-      return flask.Response(status=200)
+        return flask.Response(status=200)
     else:
-      return flask.Response(status=403)
+        return flask.Response(status=403)
+
 
 def generate_fake_data():
     """Simulate sensor data and send to /consumeTerraWebhook every 30 seconds."""
 
-    stress_levels = [ "Low stress", "Normal but not low stress", "Moderately high stress", "Very High stress", "EXTREMELY high stress"]
+    stress_levels = ["Low stress", "Normal but not low stress",
+                     "Moderately high stress", "Very High stress", "EXTREMELY high stress"]
 
     while True:
         with open("../stress.txt", "r") as file:
@@ -347,39 +356,46 @@ def generate_fake_data():
                 "heart_data": {
                     "heart_rate_data": {
                         "summary": {
-                            "avg_hr_bpm": random.randint(70 + stress_level * 10, 120 + stress_level * 10)  # Random heart rate
+                            # Random heart rate
+                            "avg_hr_bpm": random.randint(70 + stress_level * 10, 120 + stress_level * 10)
                         }
                     }
                 },
                 "blood_pressure_data": {
                     "blood_pressure_samples": [
-                        {"systolic_bp": random.randint(100 + stress_level * 5, 130 + stress_level * 5), "diastolic_bp": random.randint(60 + stress_level * 5, 80 + stress_level * 5)}
+                        {"systolic_bp": random.randint(100 + stress_level * 5, 130 + stress_level * 5),
+                         "diastolic_bp": random.randint(60 + stress_level * 5, 80 + stress_level * 5)}
                     ]
                 },
                 "temperature_data": {
                     "body_temperature_samples": [
-                        {"temperature_celsius": round(random.uniform(36.0 + stress_level * 0.1, 37.0 + stress_level * 0.1), 1)}  # Normal body temp range
+                        {"temperature_celsius": round(random.uniform(
+                            36.0 + stress_level * 0.1, 37.0 + stress_level * 0.1), 1)}  # Normal body temp range
                     ]
                 },
                 "metadata": {
-                    "end_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # Current timestamp in UTC
+                    # Current timestamp in UTC
+                    "end_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 }
             }]
         }
 
         # Send data to the webhook endpoint
         try:
-            response = requests.post("http://localhost:5000/consumeTerraWebhook", json=fake_data)
+            response = requests.post(
+                "http://localhost:5000/consumeTerraWebhook", json=fake_data)
             if response.status_code == 200:
                 print("✅ Fake data sent successfully!")
                 print("Stress: ", stress_level)
 
             else:
-                print(f"❌ Failed to send data: {response.status_code} - {response.text}")
+                print(
+                    f"❌ Failed to send data: {response.status_code} - {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"🚨 Error sending fake data: {e}")
 
         time.sleep(3)  # Wait 30 seconds before sending the next request
+
 
 # Start the background thread
 threading.Thread(target=generate_fake_data, daemon=True).start()

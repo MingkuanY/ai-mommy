@@ -1,26 +1,16 @@
 [
     {
-        "condition": "current stress level > 7",
+        "condition": "current time > 2 hours",
         "actions": [
-            "TEXT_FRIEND: 7274574433|hey im stressed"
+            "BRIGHTNESS: 70",
+            "COLOR: 2700"
         ],
         "priority": 1,
-        "condition_cute": "when you're feeling super stressed out, sweetie (>7 stress level) \ud83d\ude1f",
+        "condition_cute": "when you've been staring at that screen for more than 2 hours straight, honey",
         "actions_cute": [
-            "I'll send a text to your friend saying 'hey, I'm stressed' \ud83d\udc8c"
+            "dim that screen brightness down to a comfy 70%",
+            "change the color temperature to a warm and cozy 2700K"
         ],
-        "priority_cute": "this is super important, so I'll make it a top priority! \ud83c\udf1f"
-    },
-    {
-        "condition": "current stress level is high",
-        "actions": [
-            "SET_WEBSITE: https://www.youtube.com/results?search_query=snowboarding"
-        ],
-        "priority": 1,
-        "condition_cute": "When your stress level is high \ud83d\udcc8\ud83d\ude30",
-        "actions_cute": [
-            "Open a snowboarding video on YouTube \ud83c\udfc2\ud83c\udfa5"
-        ],
-        "priority_cute": "High, because your well-being is super important to me! \ud83d\udc96\ud83c\udf1f"
+        "priority_cute": "this is a top priority, sugar, we gotta take care of those eyes of yours"
     }
 ]

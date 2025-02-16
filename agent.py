@@ -12,6 +12,8 @@ import subprocess
 import json
 from collections import deque
 import base64
+import subprocess
+import re
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -133,7 +135,7 @@ class ActionHistory:
         })
     
     def get_recent_actions(self, count: int = 5) -> List[Dict]:
-        return list(self.actions)[-count:]
+        return list(self.actions)
 
 class StressMonitorAgent:
     def __init__(self, openai_api_key):
@@ -152,6 +154,11 @@ class StressMonitorAgent:
     def load_monitoring_rules(self) -> List[MonitoringRule]:
         """Load monitoring rules from rules.json file"""
         rules = ""
+
+        if os.path.getsize(self.rules_path) == 0:
+            print(f"Warning: {self.rules_path} is empty. No rules loaded.")
+            return []
+
         try:
             with open(self.rules_path, 'r') as f:
                 rules_data = json.load(f)
@@ -241,11 +248,13 @@ class StressMonitorAgent:
         Recent Actions Taken:
         {recent_actions}
         
+        Do not take an action if it has been recently taken unless you have a particular reason to redo it again at this time.
+        
         MONITORING RULES TO FOLLOW:
         {monitoring_rules}
         
         Your job is to check if any of the monitoring rules apply to the current situation and its history.
-        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action.
+        If they do, choose appropriate actions from the rule's action list, if any actions are required. remember, you do not always need to do an action. Only take an action if the monitoring rules explicitly align with what the user is currently doing.
         
         {format_instructions}
         
@@ -351,6 +360,8 @@ class StressMonitorAgent:
     def execute_set_website(self, url: str):
         """Execute computer control command"""
         if platform.system() == "Darwin":  # macOS
+            if not url.startswith("http://") and not url.startswith("https://"):
+                url = "https://www." + url
             os.system(f"""osascript -e \'tell application "Safari" to set URL of front document to "{url}"\'""")
         print(f"Set website to: {url}")
     
@@ -362,6 +373,8 @@ class StressMonitorAgent:
     
     def execute_order_food(self, dish_and_restaurant: str):
         """Execute computer control command"""
+        process = subprocess.Popen(["python3", "order_food.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.send_notification("Ordered food for you!")
         print(f"Orders {dish_and_restaurant}")
     
     def execute_text_friend(self, number_and_message: str):
@@ -397,17 +410,40 @@ class StressMonitorAgent:
     
     def execute_music(self, genre: str):
         """Execute music genre change"""
+        genre_to_url= {
+            "jazz": "https://www.youtube.com/watch?v=au0AHLKkkVc",
+            "lofi": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+            "pop": "https://www.youtube.com/watch?v=QIHMCAkDH9E"
+        }
+        output = genre_to_url.get(genre, default="https://www.youtube.com/watch?v=au0AHLKkkVc")
+        
+        os.system(f"""osascript -e 'tell application "Safari"
+                tell front window
+                    make new tab with properties {{URL:"{output}"}}
+                    set current tab to tab -1
+                end tell
+            end tell'""")
         # Add Spotify API implementation
         print(f"Changing music to: {genre}")
     
     def send_notification(self, message: str):
         """Send system notification"""
+        message = re.sub(r"[^A-Za-z0-9 ,.]", "", message)
         if platform.system() == "Darwin":  # macOS
             os.system(f"""osascript -e 'display notification "{message}" with title "Stress Monitor"'""")
         # Add Windows notification implementation
     
     def set_brightness(self, level: str):
         """Set screen brightness"""
+        if not 0.0 <= level <= 100:
+            raise ValueError("Brightness must be between 0.0 and 100")
+        level = float(level)/100
+        try:
+            subprocess.run(['brightness', str(level)], check=True)
+        except subprocess.CalledProcessError:
+            print("Error: Failed to set brightness")
+        except FileNotFoundError:
+            print("Error: 'brightness' command not found. Please install it first. brew install brightness")
         print(f"Setting brightness to: {level}")
     
     def set_color_temperature(self, temperature: str):

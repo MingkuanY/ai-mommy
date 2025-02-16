@@ -19,8 +19,9 @@ from langchain.prompts import PromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
 from terra.base_client import Terra
-
-
+import requests
+import threading
+import time
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -140,7 +141,6 @@ def get_history():
     try:
         data = read_history()
         biometrics = get_bio_data()
-        print("Biometrics: ", biometrics)
 
         data = [{"time": time, "stress": stress} for time, stress in data]
 
@@ -311,13 +311,6 @@ def consume_terra_webhook() -> flask.Response:
 
     avg_body_temperature = sum(temp["temperature_celsius"] for temp in body["data"][0]["temperature_data"]["body_temperature_samples"]) / len(body["data"][0]["temperature_data"]["body_temperature_samples"])
 
-    timestamp = body["data"][0]["metadata"]["end_time"]
-
-    print("Heart rate: ", avg_heart_rate)
-    print("Blood pressure: ", avg_systolic_bp, avg_diastolic_bp)
-    print("Body temperature: ", avg_body_temperature)
-
-
     with open("heart_rate.txt", "a") as file:
         file.write(f"{avg_heart_rate}\n")
 
@@ -332,6 +325,51 @@ def consume_terra_webhook() -> flask.Response:
       return flask.Response(status=200)
     else:
       return flask.Response(status=403)
+
+def generate_fake_data():
+    """Simulate sensor data and send to /consumeTerraWebhook every 30 seconds."""
+    while True:
+        fake_data = {
+            "user": {"user_id": "test_user"},
+            "type": "health_data",
+            "data": [{
+                "heart_data": {
+                    "heart_rate_data": {
+                        "summary": {
+                            "avg_hr_bpm": random.randint(70, 120)  # Random heart rate
+                        }
+                    }
+                },
+                "blood_pressure_data": {
+                    "blood_pressure_samples": [
+                        {"systolic_bp": random.randint(110, 120), "diastolic_bp": random.randint(70, 75)}
+                    ]
+                },
+                "temperature_data": {
+                    "body_temperature_samples": [
+                        {"temperature_celsius": round(random.uniform(37.0, 38.0), 1)}  # Normal body temp range
+                    ]
+                },
+                "metadata": {
+                    "end_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # Current timestamp in UTC
+                }
+            }]
+        }
+
+        # Send data to the webhook endpoint
+        try:
+            response = requests.post("http://localhost:5000/consumeTerraWebhook", json=fake_data)
+            if response.status_code == 200:
+                print("✅ Fake data sent successfully!")
+            else:
+                print(f"❌ Failed to send data: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"🚨 Error sending fake data: {e}")
+
+        time.sleep(10)  # Wait 30 seconds before sending the next request
+
+# Start the background thread
+threading.Thread(target=generate_fake_data, daemon=True).start()
 
 if __name__ == "__main__":
     # Uncomment the following lines if you want to run the background thread.

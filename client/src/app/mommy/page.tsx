@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Markdown from "react-markdown";
 import {
 	CartesianGrid,
 	Line,
@@ -87,11 +88,20 @@ const page = (props: Props) => {
 		}
 
 		// interval to fetch data every 5 seconds
-		fetchData();
+		try {
+			fetchData();
+		} catch (e) {
+			console.log("Error fetching data");
+		}
+
 		const interval = setInterval(() => {
 			console.log("fetching data...");
-			fetchData();
-		}, 1000);
+			try {
+				fetchData();
+			} catch (e) {
+				console.log("Error fetching data");
+			}
+		}, 5000);
 
 		return () => clearInterval(interval);
 	}, [setData]);
@@ -110,32 +120,28 @@ const page = (props: Props) => {
 				</p>
 
 				{chatHistory.length > 0 && (
-					<>
-						<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2">
-							{chatHistory.map((chat, index) => (
+					<div className="w-[40rem] bg-pink-100 rounded-lg p-4 flex flex-col gap-2">
+						{chatHistory.map((chat, index) => (
+							<div
+								key={index}
+								className={`flex w-full ${
+									chat.sender === "user" ? "justify-end" : "justify-start"
+								}`}
+							>
 								<div
-									key={index}
-									className={
-										chat.sender === "user"
-											? "flex-row w-full flex pl-4"
-											: "flex-row w-full flex pr-4"
-									}
+									className={`p-2 overflow-hidden ${
+										chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
+									} rounded-lg max-w-[75%]`}
 								>
-									{/* spacer */}
-									<div className="flex-1"></div>
-									<div
-										key={index}
-										className={`p-2 ${
-											chat.sender === "user" ? "bg-pink-200" : "bg-pink-300"
-										} rounded-lg`}
-									>
-										<p className="text-black">{chat.message}</p>
-									</div>
+									<p className="text-black">
+										<Markdown>{chat.message}</Markdown>
+									</p>
 								</div>
-							))}
-						</div>
-					</>
+							</div>
+						))}
+					</div>
 				)}
+
 				<div className="w-[40rem] bg-pink-100 rounded-lg p-4">
 					<input
 						type="text"

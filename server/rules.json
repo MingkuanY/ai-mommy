@@ -1,0 +1,9 @@
+[
+    {
+        "condition": "YouTube active for more than 2 hours",
+        "actions": [
+            "Send reminder: 'Nyaa~ You've been on YouTube for quite a while, darling. How about a little break? \ud83d\udc96'"
+        ],
+        "priority": 2
+    }
+]

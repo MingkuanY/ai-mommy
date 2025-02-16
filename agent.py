@@ -134,7 +134,7 @@ class ActionHistory:
         })
     
     def get_recent_actions(self, count: int = 5) -> List[Dict]:
-        return list(self.actions)[-count:]
+        return list(self.actions)
 
 class StressMonitorAgent:
     def __init__(self, openai_api_key):
@@ -241,6 +241,8 @@ class StressMonitorAgent:
         
         Recent Actions Taken:
         {recent_actions}
+        
+        Do not take an action if it has been recently taken unless you have a particular reason to redo it again at this time.
         
         MONITORING RULES TO FOLLOW:
         {monitoring_rules}
@@ -364,6 +366,7 @@ class StressMonitorAgent:
     def execute_order_food(self, dish_and_restaurant: str):
         """Execute computer control command"""
         process = subprocess.Popen(["python3", "order_food.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.send_notification("Ordered food for you!")
         print(f"Orders {dish_and_restaurant}")
     
     def execute_text_friend(self, number_and_message: str):
@@ -404,7 +407,7 @@ class StressMonitorAgent:
             "lofi": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
             "pop": "https://www.youtube.com/watch?v=QIHMCAkDH9E"
         }
-        output = genre_to_url.get(genre)
+        output = genre_to_url.get(genre, default="https://www.youtube.com/watch?v=au0AHLKkkVc")
         
         os.system(f"""osascript -e 'tell application "Safari"
                 tell front window
@@ -417,6 +420,7 @@ class StressMonitorAgent:
     
     def send_notification(self, message: str):
         """Send system notification"""
+        message = ''.join([e for e in message if e in "1234567890abcdefghijklmnopqrstuvxyz .,"])
         if platform.system() == "Darwin":  # macOS
             os.system(f"""osascript -e 'display notification "{message}" with title "Stress Monitor"'""")
         # Add Windows notification implementation
